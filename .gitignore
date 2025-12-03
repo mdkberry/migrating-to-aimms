@@ -1,0 +1,7 @@
+# Ignore contents of these folders but keep the folders themselves
+/current_project/
+/old_project/
+/transfer_folder/
+
+# Ignore dev folder entirely
+/dev/
