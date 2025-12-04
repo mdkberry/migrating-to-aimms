@@ -82,7 +82,12 @@ class MediaMigrator:
                 
                 # Log progress
                 progress = (migrated_shots / total_shots) * 100
-                self.logger.info(f"Media migration progress: {progress:.1f}% ({migrated_shots}/{total_shots})")
+                self.logger.info(f"Shot folders migration progress: {progress:.1f}% ({migrated_shots}/{total_shots})")
+            
+            # Migrate asset folders (characters, locations, other)
+            asset_migration_success = self.migrate_asset_folders()
+            if not asset_migration_success:
+                errors.append("Asset folder migration failed")
             
             # Validate video/thumbnail pairs
             validation_result = self._validate_media_files()
@@ -173,6 +178,60 @@ class MediaMigrator:
             errors.append(error_msg)
             self.logger.error(error_msg)
             return MediaResult(success=False, errors=errors, warnings=warnings)
+    
+    def migrate_asset_folders(self) -> bool:
+        """Migrate asset folders (characters, locations, other) from source to target."""
+        errors = []
+        warnings = []
+        
+        try:
+            self.logger.info("Migrating asset folders (characters, locations, other)")
+            
+            # Asset subdirectories to migrate
+            asset_subdirs = ['characters', 'locations', 'other']
+            
+            for subdir in asset_subdirs:
+                source_subdir = os.path.join(self.source_media_path, subdir)
+                target_subdir = os.path.join(self.target_media_path, subdir)
+                
+                if os.path.exists(source_subdir):
+                    # Copy the entire subdirectory
+                    if safe_copy_directory(source_subdir, target_subdir):
+                        # Count files in copied directory
+                        file_count = 0
+                        for root, dirs, files in os.walk(target_subdir):
+                            file_count += len(files)
+                        
+                        self.logger.info(f"Successfully migrated {subdir} folder: {file_count} files")
+                    else:
+                        error_msg = f"Failed to migrate {subdir} folder"
+                        errors.append(error_msg)
+                        self.logger.error(error_msg)
+                else:
+                    warning_msg = f"Asset subdirectory not found: {source_subdir}"
+                    warnings.append(warning_msg)
+                    self.logger.warning(warning_msg)
+            
+            # Log results
+            if errors:
+                self.logger.error(f"Asset folder migration completed with {len(errors)} errors")
+                for error in errors:
+                    self.logger.error(f"  - {error}")
+            
+            if warnings:
+                self.logger.warning(f"Asset folder migration completed with {len(warnings)} warnings")
+                for warning in warnings:
+                    self.logger.warning(f"  - {warning}")
+            
+            success = len(errors) == 0
+            self.logger.info(f"Asset folder migration completed: {'SUCCESS' if success else 'FAILED'}")
+            
+            return success
+            
+        except Exception as e:
+            error_msg = f"Asset folder migration failed: {e}"
+            self.logger.error(error_msg)
+            return False
     
     def _validate_media_files(self) -> MediaResult:
         """Validate media files for completeness."""

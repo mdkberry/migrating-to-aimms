@@ -140,7 +140,7 @@ class ReportGenerator:
             # Migration Details
             f.write("## Migration Details\n\n")
             f.write(f"- Migration Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-            f.write(f"- Python Version: {__import__('sys').version}\n")
+            f.write(f"- Python Version: {__import__('sys').version_info.major}.{__import__('sys').version_info.minor}.{__import__('sys').version_info.micro}\n")
             f.write(f"- SQLite Version: {__import__('sqlite3').sqlite_version}\n\n")
             
             # Database Changes
@@ -213,6 +213,12 @@ class ReportGenerator:
         
         self.logger.info(f"Generating JSON report: {report_path}")
         
+        # Helper function to serialize datetime objects
+        def serialize_datetime(obj):
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+        
         report_data = {
             "migration_info": {
                 "date": datetime.now().isoformat(),
@@ -234,12 +240,12 @@ class ReportGenerator:
                 "total_errors": len(self.migration_stats.get('errors', [])),
                 "total_warnings": len(self.migration_stats.get('warnings', [])),
                 "phases": self.migration_stats.get('phases', []),
-                "start_time": self.migration_stats.get('start_time', '').isoformat() if self.migration_stats.get('start_time') else None,
-                "end_time": self.migration_stats.get('end_time', '').isoformat() if self.migration_stats.get('end_time') else None
+                "start_time": serialize_datetime(self.migration_stats.get('start_time')) if self.migration_stats.get('start_time') else None,
+                "end_time": serialize_datetime(self.migration_stats.get('end_time')) if self.migration_stats.get('end_time') else None
             }
         
         with open(report_path, 'w', encoding='utf-8') as f:
-            json.dump(report_data, f, indent=2, ensure_ascii=False)
+            json.dump(report_data, f, indent=2, ensure_ascii=False, default=serialize_datetime)
     
     def generate_phase_report(self, phase_name: str, phase_result: Dict):
         """Generate detailed report for a specific migration phase."""

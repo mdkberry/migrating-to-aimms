@@ -64,6 +64,11 @@ class Validator:
             errors.extend(cross_result.errors)
             warnings.extend(cross_result.warnings)
             
+            # Check for orphaned asset files
+            orphaned_result = self._check_orphaned_asset_files()
+            errors.extend(orphaned_result.errors)
+            warnings.extend(orphaned_result.warnings)
+            
             success = len(errors) == 0
             self.logger.info(f"Validation completed: {'SUCCESS' if success else 'FAILED'}")
             
@@ -203,7 +208,7 @@ class Validator:
                 return ValidationResult(success=False, errors=errors, warnings=warnings)
             
             # Check for media folders
-            media_folders = [f for f in os.listdir(self.media_path) 
+            media_folders = [f for f in os.listdir(self.media_path)
                            if os.path.isdir(os.path.join(self.media_path, f))]
             
             if not media_folders:
@@ -212,12 +217,28 @@ class Validator:
                 self.logger.warning(warning_msg)
                 return ValidationResult(success=True, errors=errors, warnings=warnings)
             
+            # Check for asset subdirectories (characters, locations, other)
+            asset_subdirs = ['characters', 'locations', 'other']
+            for subdir in asset_subdirs:
+                subdir_path = os.path.join(self.media_path, subdir)
+                if os.path.exists(subdir_path):
+                    self.logger.info(f"Found asset subdirectory: {subdir}")
+            
             # Validate each media folder
             total_folders = len(media_folders)
             validated_folders = 0
             
+            # Asset subdirectories to exclude from shot validation
+            asset_subdirs = {'characters', 'locations', 'other'}
+            
             for folder in media_folders:
                 folder_path = os.path.join(self.media_path, folder)
+                
+                # Skip asset folders - they don't need to correspond to shot_ids
+                if folder in asset_subdirs:
+                    self.logger.debug(f"Skipping validation for asset folder: {folder}")
+                    validated_folders += 1
+                    continue
                 
                 # Check if folder corresponds to a shot_id
                 try:
@@ -360,15 +381,21 @@ class Validator:
                 
                 media_folders = set(os.listdir(self.media_path))
                 
+                # Asset subdirectories to exclude from shot validation
+                asset_subdirs = {'characters', 'locations', 'other'}
+                
+                # Filter out asset folders from media folders
+                shot_media_folders = media_folders - asset_subdirs
+                
                 # Shots without media folders
-                missing_media = db_shot_ids - media_folders
+                missing_media = db_shot_ids - shot_media_folders
                 if missing_media:
                     warning_msg = f"Shots without media folders: {', '.join(missing_media)}"
                     warnings.append(warning_msg)
                     self.logger.warning(warning_msg)
                 
-                # Media folders without shots
-                extra_media = media_folders - db_shot_ids
+                # Media folders without shots (excluding asset folders)
+                extra_media = shot_media_folders - db_shot_ids
                 if extra_media:
                     warning_msg = f"Media folders without corresponding shots: {', '.join(extra_media)}"
                     warnings.append(warning_msg)
@@ -379,15 +406,29 @@ class Validator:
                 takes_data = cursor.fetchall()
                 
                 for shot_id, file_path in takes_data:
+                    # Resolve relative file path to absolute path
+                    # file_path is typically like "media/2/base_01.png"
+                    # We need to resolve it against the target media directory
+                    if file_path.startswith('media/'):
+                        # Extract the relative path after 'media/'
+                        relative_path = file_path[6:]  # Remove 'media/' prefix
+                        # Ensure consistent path separators (use backslashes on Windows)
+                        if os.name == 'nt':  # Windows
+                            relative_path = relative_path.replace('/', '\\')
+                        absolute_path = os.path.join(self.media_path, relative_path)
+                    else:
+                        # If it's already absolute or different format, use as-is
+                        absolute_path = file_path
+                    
                     # Check if file exists
-                    if not os.path.exists(file_path):
-                        error_msg = f"Take file not found: {file_path}"
+                    if not os.path.exists(absolute_path):
+                        error_msg = f"Take file not found: {file_path} (resolved to: {absolute_path})"
                         errors.append(error_msg)
                         self.logger.error(error_msg)
                     else:
                         # Check file size
-                        if is_file_zero_size(file_path):
-                            warning_msg = f"Zero-size take file: {file_path}"
+                        if is_file_zero_size(absolute_path):
+                            warning_msg = f"Zero-size take file: {file_path} (resolved to: {absolute_path})"
                             warnings.append(warning_msg)
                             self.logger.warning(warning_msg)
                 
@@ -396,20 +437,109 @@ class Validator:
                 assets_data = cursor.fetchall()
                 
                 for id_key, file_path in assets_data:
-                    if file_path and not os.path.exists(file_path):
-                        error_msg = f"Asset file not found: {file_path}"
-                        errors.append(error_msg)
-                        self.logger.error(error_msg)
-                    elif file_path and is_file_zero_size(file_path):
-                        warning_msg = f"Zero-size asset file: {file_path}"
-                        warnings.append(warning_msg)
-                        self.logger.warning(warning_msg)
+                    if file_path:
+                        # Resolve relative file path to absolute path
+                        # file_path is typically like "media/characters/Alicia_Winters/Alicia_Winters.png"
+                        # We need to resolve it against the target media directory
+                        if file_path.startswith('media/'):
+                            # Extract the relative path after 'media/'
+                            relative_path = file_path[6:]  # Remove 'media/' prefix
+                            # Ensure consistent path separators (use backslashes on Windows)
+                            if os.name == 'nt':  # Windows
+                                relative_path = relative_path.replace('/', '\\')
+                            absolute_path = os.path.join(self.media_path, relative_path)
+                        else:
+                            # If it's already absolute or different format, use as-is
+                            absolute_path = file_path
+                        
+                        if not os.path.exists(absolute_path):
+                            error_msg = f"Asset file not found: {file_path} (resolved to: {absolute_path})"
+                            errors.append(error_msg)
+                            self.logger.error(error_msg)
+                        elif is_file_zero_size(absolute_path):
+                            warning_msg = f"Zero-size asset file: {file_path} (resolved to: {absolute_path})"
+                            warnings.append(warning_msg)
+                            self.logger.warning(warning_msg)
             
             self.logger.info("Cross-consistency validation completed successfully")
             return ValidationResult(success=len(errors) == 0, errors=errors, warnings=warnings)
             
         except Exception as e:
             error_msg = f"Cross-consistency validation failed: {e}"
+            errors.append(error_msg)
+            self.logger.error(error_msg)
+            return ValidationResult(success=False, errors=errors, warnings=[])
+    
+    def _check_orphaned_asset_files(self) -> ValidationResult:
+        """Check for asset files that exist but aren't tracked in the assets table."""
+        errors = []
+        warnings = []
+        
+        try:
+            self.logger.info("Checking for orphaned asset files")
+            
+            # Asset subdirectories to check
+            asset_subdirs = ['characters', 'locations', 'other']
+            
+            with sqlite3.connect(self.db_path) as conn:
+                # Get all asset file paths from database and resolve to absolute paths
+                cursor = conn.execute("SELECT file_path FROM assets WHERE file_path IS NOT NULL")
+                db_asset_absolute_paths = set()
+                
+                for row in cursor.fetchall():
+                    file_path = row[0]
+                    # Resolve relative file path to absolute path (same logic as cross-validation)
+                    if file_path.startswith('media/'):
+                        relative_path = file_path[6:]  # Remove 'media/' prefix
+                        if os.name == 'nt':  # Windows
+                            relative_path = relative_path.replace('/', '\\')
+                        absolute_path = os.path.join(self.media_path, relative_path)
+                        db_asset_absolute_paths.add(absolute_path)
+                    else:
+                        db_asset_absolute_paths.add(file_path)
+                
+                # Check each asset subdirectory for files not in database
+                thumbnail_files_found = []
+                
+                for subdir in asset_subdirs:
+                    subdir_path = os.path.join(self.media_path, subdir)
+                    
+                    if not os.path.exists(subdir_path):
+                        continue
+                    
+                    # Find all files in this subdirectory
+                    for root, dirs, files in os.walk(subdir_path):
+                        for file_name in files:
+                            file_path = os.path.join(root, file_name)
+                            
+                            # Track thumbnail files under asset directories - they are valid
+                            # Thumbnails are used for previewing 3D asset files
+                            if 'thumbnails' in file_path.lower():
+                                thumbnail_files_found.append(file_path)
+                                continue
+                            
+                            # Check if this file is tracked in the database
+                            if file_path not in db_asset_absolute_paths:
+                                # Log the full absolute path for clarity with normalized separators
+                                if os.name == 'nt':  # Windows
+                                    file_path = file_path.replace('/', '\\')
+                                warning_msg = f"Orphaned asset file (not in assets table): {file_path}"
+                                warnings.append(warning_msg)
+                                self.logger.warning(warning_msg)
+                
+                # Log thumbnail files found in asset directories
+                if thumbnail_files_found:
+                    self.logger.info(f"Found {len(thumbnail_files_found)} thumbnail files in asset directories (these are valid for 3D asset previews):")
+                    for thumbnail_file in thumbnail_files_found:
+                        if os.name == 'nt':  # Windows
+                            thumbnail_file = thumbnail_file.replace('/', '\\')
+                        self.logger.info(f"  - {thumbnail_file}")
+            
+            self.logger.info(f"Orphaned asset check completed: {len(warnings)} orphaned files found")
+            return ValidationResult(success=True, errors=errors, warnings=warnings)
+            
+        except Exception as e:
+            error_msg = f"Orphaned asset check failed: {e}"
             errors.append(error_msg)
             self.logger.error(error_msg)
             return ValidationResult(success=False, errors=errors, warnings=[])

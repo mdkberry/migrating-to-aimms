@@ -6,6 +6,7 @@ Handles migration of SQLite database from old schema to new schema.
 
 import sqlite3
 import uuid
+import os
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional, NamedTuple
