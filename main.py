@@ -12,6 +12,7 @@ Usage:
 
 import argparse
 import sys
+import os
 import logging
 from migration_engine import MigrationEngine
 from config import MigrationConfig
@@ -73,9 +74,18 @@ Examples:
     
     args = parser.parse_args()
     
-    # Setup logging
-    setup_logging(verbose=args.verbose)
+    # Setup logging with automatic log file
+    log_file = None
+    if args.target:
+        # Create log file in target directory
+        log_file = os.path.join(args.target, 'migration.log')
+    
+    setup_logging(verbose=args.verbose, log_file=log_file)
     logger = logging.getLogger(__name__)
+    
+    # Log file location info
+    if log_file:
+        logger.info(f"Detailed logs will be saved to: {log_file}")
     
     try:
         # Load configuration

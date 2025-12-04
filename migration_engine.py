@@ -97,6 +97,12 @@ class MigrationEngine:
             self.logger.error(error_msg)
             self.migration_stats['errors'].append(error_msg)
             
+            # Generate reports even on early failure
+            try:
+                self._generate_reports_on_failure()
+            except Exception as report_error:
+                self.logger.error(f"Failed to generate failure reports: {report_error}")
+            
             return False
     
     def _prepare_migration(self) -> bool:
@@ -436,6 +442,36 @@ class MigrationEngine:
             })
             
             self.migration_stats['errors'].append(f"Report generation failed: {e}")
+    
+    def _generate_reports_on_failure(self):
+        """Generate reports even when migration fails early."""
+        try:
+            # Create report directory if it doesn't exist
+            os.makedirs(self.config.report_path, exist_ok=True)
+            
+            # Initialize report generator with available data
+            report_generator = ReportGenerator(
+                target_path=self.config.target_path,
+                shot_mapping=self.shot_mapping,
+                migration_stats=self.migration_stats
+            )
+            
+            # Generate basic reports
+            report_generator.generate_reports()
+            
+            self.logger.info("Failure reports generated successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to generate failure reports: {e}")
+            # Try to create a simple error file
+            try:
+                error_file = os.path.join(self.config.report_path, 'migration_error.txt')
+                with open(error_file, 'w') as f:
+                    f.write(f"Migration failed with error: {e}\n")
+                    f.write(f"Migration stats: {self.migration_stats}\n")
+                self.logger.info(f"Error details saved to: {error_file}")
+            except Exception as write_error:
+                self.logger.error(f"Failed to write error file: {write_error}")
     
     def _create_target_directories(self):
         """Create target directory structure."""

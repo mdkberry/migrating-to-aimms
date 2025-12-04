@@ -40,8 +40,14 @@ def convert_date_to_utc(date_str: Optional[str]) -> str:
         if date_str.endswith('Z'):
             return date_str
         
-        # Try common formats
-        for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d']:
+        # Try formats with microseconds
+        for fmt in [
+            '%Y-%m-%d %H:%M:%S.%f',      # 2025-08-29 07:51:57.978203
+            '%Y-%m-%dT%H:%M:%S.%f',      # 2025-08-29T07:51:57.978203
+            '%Y-%m-%d %H:%M:%S',         # 2025-08-29 07:51:57
+            '%Y-%m-%dT%H:%M:%S',         # 2025-08-29T07:51:57
+            '%Y-%m-%d'                   # 2025-08-29
+        ]:
             try:
                 dt = datetime.strptime(date_str, fmt)
                 return dt.strftime('%Y-%m-%dT%H:%M:%SZ')

@@ -43,6 +43,10 @@ class Validator:
         warnings = []
         
         try:
+            # ======== VALIDATION PHASE START ========
+            self.logger.info("=" * 60)
+            self.logger.info("VALIDATION PHASE STARTING")
+            self.logger.info("=" * 60)
             self.logger.info("Starting validation process")
             
             # Database validation

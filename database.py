@@ -44,6 +44,10 @@ class DatabaseMigrator:
         warnings = []
         
         try:
+            # ======== DATABASE MIGRATION PHASE START ========
+            self.logger.info("=" * 60)
+            self.logger.info("DATABASE MIGRATION PHASE STARTING")
+            self.logger.info("=" * 60)
             self.logger.info("Starting database migration")
             
             # Validate source database

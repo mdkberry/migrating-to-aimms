@@ -48,6 +48,10 @@ class MediaMigrator:
         warnings = []
         
         try:
+            # ======== MEDIA MIGRATION PHASE START ========
+            self.logger.info("=" * 60)
+            self.logger.info("MEDIA MIGRATION PHASE STARTING")
+            self.logger.info("=" * 60)
             self.logger.info("Starting media migration")
             
             # Create target media directory
@@ -132,16 +136,16 @@ class MediaMigrator:
                         warnings.append(warning_msg)
                         self.logger.warning(warning_msg)
                     
-                    if file_info['size'] > 0:
-                        # Copy file
-                        if safe_copy_file(source_item, target_item):
-                            file_count += 1
-                        else:
-                            error_msg = f"Failed to copy file: {source_item}"
-                            errors.append(error_msg)
-                            self.logger.error(error_msg)
+                    # Always attempt to copy files, including zero-size placeholders
+                    if safe_copy_file(source_item, target_item):
+                        file_count += 1
+                        # Log zero-size files as warnings (not errors)
+                        if file_info['is_zero_size']:
+                            warning_msg = f"Copied zero-size placeholder file: {source_item}"
+                            warnings.append(warning_msg)
+                            self.logger.warning(warning_msg)
                     else:
-                        error_msg = f"Cannot copy zero-size file: {source_item}"
+                        error_msg = f"Failed to copy file: {source_item}"
                         errors.append(error_msg)
                         self.logger.error(error_msg)
                 
@@ -176,6 +180,10 @@ class MediaMigrator:
         warnings = []
         
         try:
+            # ======== MEDIA VALIDATION PHASE START ========
+            self.logger.info("=" * 60)
+            self.logger.info("MEDIA VALIDATION PHASE STARTING")
+            self.logger.info("=" * 60)
             self.logger.info("Validating media files")
             
             if not os.path.exists(self.target_media_path):
@@ -233,6 +241,16 @@ class MediaMigrator:
         warnings = []
         
         try:
+            # Get folder name (should be shot_id)
+            folder_name = os.path.basename(folder_path)
+            
+            # Find corresponding shot_name from mapping
+            shot_name = None
+            for name, shot_id in self.shot_mapping.items():
+                if str(shot_id) == folder_name:
+                    shot_name = name
+                    break
+            
             # Get all files in folder
             files = []
             for item in os.listdir(folder_path):
@@ -246,18 +264,21 @@ class MediaMigrator:
             image_files = [f for f in files if f.startswith('image_')]
             asset_files = [f for f in files if f.startswith('asset_')]
             
+            # Build context message
+            context_msg = f" (Shot: {shot_name} → Folder: {folder_name})" if shot_name else f" (Folder: {folder_name})"
+            
             # Check each video has a thumbnail
             for video_file in video_files:
                 thumbnail_name = video_file.replace('.mp4', '.png')
                 if thumbnail_name not in thumbnail_files:
-                    error_msg = f"Missing thumbnail for {video_file} in folder {folder_path}"
+                    error_msg = f"Missing thumbnail for {video_file}{context_msg}"
                     errors.append(error_msg)
                     self.logger.error(error_msg)
                 else:
                     # Check thumbnail is not zero size
                     thumbnail_path = os.path.join(folder_path, thumbnail_name)
                     if is_file_zero_size(thumbnail_path):
-                        error_msg = f"Zero-size thumbnail: {thumbnail_path}"
+                        error_msg = f"Zero-size thumbnail: {thumbnail_path}{context_msg}"
                         errors.append(error_msg)
                         self.logger.error(error_msg)
             
@@ -265,7 +286,7 @@ class MediaMigrator:
             for thumbnail_file in thumbnail_files:
                 video_name = thumbnail_file.replace('.png', '.mp4')
                 if video_name not in video_files:
-                    warning_msg = f"Orphaned thumbnail (no video): {thumbnail_file} in folder {folder_path}"
+                    warning_msg = f"Orphaned thumbnail (no video): {thumbnail_file}{context_msg}"
                     warnings.append(warning_msg)
                     self.logger.warning(warning_msg)
             
@@ -273,12 +294,13 @@ class MediaMigrator:
             for file_name in files:
                 file_path = os.path.join(folder_path, file_name)
                 if is_file_zero_size(file_path):
-                    warning_msg = f"Zero-size file: {file_path}"
+                    warning_msg = f"Zero-size file: {file_path}{context_msg}"
                     warnings.append(warning_msg)
                     self.logger.warning(warning_msg)
             
-            # Log folder summary
-            self.logger.debug(f"Folder {folder_path}: "
+            # Log folder summary with context
+            context_info = f"Shot: {shot_name} → Folder: {folder_name}" if shot_name else f"Folder: {folder_name}"
+            self.logger.debug(f"Folder {context_info}: "
                             f"{len(video_files)} videos, "
                             f"{len(thumbnail_files)} thumbnails, "
                             f"{len(image_files)} images, "
