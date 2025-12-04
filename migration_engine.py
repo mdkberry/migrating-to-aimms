@@ -123,15 +123,15 @@ class MigrationEngine:
             # Create target directory structure
             self._create_target_directories()
             
+            # Copy configuration files first (before creating clean structure)
+            self._copy_config_files()
+            
             # Create project structure and supporting files
             self._create_project_structure()
             
             # Create backup if requested
             if self.config.create_backup:
                 self._create_backup()
-            
-            # Copy configuration files
-            self._copy_config_files()
             
             # Log preparation summary
             duration = (datetime.now() - start_time).total_seconds()
@@ -667,8 +667,18 @@ class MigrationEngine:
                     default_config['project_start_date'] = existing_config['project_start_date']
                     self.logger.info(f"Preserved existing project_start_date: {default_config['project_start_date']}")
                 
-                # Remove ALL other fields - only keep the three required ones
-                self.logger.info("Removed unwanted fields from existing project_config.json")
+                # Log the fields that are being removed
+                existing_keys = set(existing_config.keys())
+                required_keys = set(default_config.keys())
+                removed_keys = existing_keys - required_keys
+                
+                if removed_keys:
+                    self.logger.info(f"Removed unwanted fields from existing project_config.json: {', '.join(removed_keys)}")
+                else:
+                    self.logger.info("No unwanted fields found in existing project_config.json")
+                
+                # Debug logging to show what will be written
+                self.logger.debug(f"Final project_config.json content will contain: {list(default_config.keys())}")
                 
             except Exception as e:
                 self.logger.warning(f"Failed to read existing project_config.json, using defaults: {e}")
