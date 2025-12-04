@@ -244,9 +244,19 @@ class ReportGenerator:
                 "date": datetime.now().isoformat(),
                 "version": "1.0",
                 "source_path": self.target_path,
-                "total_shots": len(self.shot_mapping)
+                "total_shots": len(self.shot_mapping),
+                "total_assets": self.migration_stats.get('asset_info', {}).get('total', 0)
             },
             "shot_mapping": self.shot_mapping,
+            "assets": {
+                "characters": self.migration_stats.get('asset_info', {}).get('characters', 0),
+                "locations": self.migration_stats.get('asset_info', {}).get('locations', 0),
+                "other": self.migration_stats.get('asset_info', {}).get('other', 0),
+                "total": self.migration_stats.get('asset_info', {}).get('total', 0),
+                "characters_files": self.migration_stats.get('asset_info', {}).get('characters_files', []),
+                "locations_files": self.migration_stats.get('asset_info', {}).get('locations_files', []),
+                "other_files": self.migration_stats.get('asset_info', {}).get('other_files', [])
+            },
             "file_structure": {
                 "data_directory": "data/",
                 "media_directory": "media/",

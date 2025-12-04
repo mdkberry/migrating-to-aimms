@@ -413,13 +413,14 @@ class Validator:
                     if file_path.startswith('media/'):
                         # Extract the relative path after 'media/'
                         relative_path = file_path[6:]  # Remove 'media/' prefix
-                        # Ensure consistent path separators (use backslashes on Windows)
-                        if os.name == 'nt':  # Windows
-                            relative_path = relative_path.replace('/', '\\')
-                        absolute_path = os.path.join(self.media_path, relative_path)
+                        
+                        # Use os.path.normpath to handle path separators correctly across platforms
+                        # This will automatically use the correct separators for the current platform
+                        normalized_path = os.path.normpath(relative_path)
+                        absolute_path = os.path.join(self.media_path, normalized_path)
                     else:
-                        # If it's already absolute or different format, use as-is
-                        absolute_path = file_path
+                        # If it's already absolute or different format, normalize it
+                        absolute_path = os.path.normpath(file_path)
                     
                     # Check if file exists
                     if not os.path.exists(absolute_path):
@@ -445,13 +446,13 @@ class Validator:
                         if file_path.startswith('media/'):
                             # Extract the relative path after 'media/'
                             relative_path = file_path[6:]  # Remove 'media/' prefix
-                            # Ensure consistent path separators (use backslashes on Windows)
-                            if os.name == 'nt':  # Windows
-                                relative_path = relative_path.replace('/', '\\')
-                            absolute_path = os.path.join(self.media_path, relative_path)
+                            
+                            # Use os.path.normpath to handle path separators correctly across platforms
+                            normalized_path = os.path.normpath(relative_path)
+                            absolute_path = os.path.join(self.media_path, normalized_path)
                         else:
-                            # If it's already absolute or different format, use as-is
-                            absolute_path = file_path
+                            # If it's already absolute or different format, normalize it
+                            absolute_path = os.path.normpath(file_path)
                         
                         if not os.path.exists(absolute_path):
                             error_msg = f"Asset file not found: {file_path} (resolved to: {absolute_path})"
@@ -492,12 +493,13 @@ class Validator:
                     # Resolve relative file path to absolute path (same logic as cross-validation)
                     if file_path.startswith('media/'):
                         relative_path = file_path[6:]  # Remove 'media/' prefix
-                        if os.name == 'nt':  # Windows
-                            relative_path = relative_path.replace('/', '\\')
-                        absolute_path = os.path.join(self.media_path, relative_path)
+                        # Use os.path.normpath for cross-platform compatibility
+                        normalized_path = os.path.normpath(relative_path)
+                        absolute_path = os.path.join(self.media_path, normalized_path)
                         db_asset_absolute_paths.add(absolute_path)
                     else:
-                        db_asset_absolute_paths.add(file_path)
+                        # Normalize absolute paths too
+                        db_asset_absolute_paths.add(os.path.normpath(file_path))
                 
                 # Check each asset subdirectory for files not in database
                 thumbnail_files_found = []

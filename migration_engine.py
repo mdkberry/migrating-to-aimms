@@ -335,20 +335,52 @@ class MigrationEngine:
                 'characters': 0,
                 'locations': 0,
                 'other': 0,
-                'total': 0
+                'total': 0,
+                'characters_files': [],
+                'locations_files': [],
+                'other_files': []
             }
             
-            # Count files in asset directories
-            if 'folders' in media_info:
-                for folder_name, folder_data in media_info['folders'].items():
-                    if folder_name == 'characters':
-                        asset_info['characters'] = folder_data.get('file_count', 0)
-                    elif folder_name == 'locations':
-                        asset_info['locations'] = folder_data.get('file_count', 0)
-                    elif folder_name == 'other':
-                        asset_info['other'] = folder_data.get('file_count', 0)
+            # Count files in asset directories by scanning the media path directly
+            media_path = self.config.get_target_media_path()
+            
+            if os.path.exists(media_path):
+                for item in os.listdir(media_path):
+                    item_path = os.path.join(media_path, item)
+                    
+                    # Check if it's a directory and matches asset directory names
+                    if os.path.isdir(item_path) and item.lower() in ['characters', 'locations', 'other']:
+                        try:
+                            # Count all files recursively in this directory and collect filenames
+                            file_count = 0
+                            file_list = []
+                            
+                            for root, dirs, files in os.walk(item_path):
+                                for file in files:
+                                    file_count += 1
+                                    # Get relative path from media directory
+                                    rel_path = os.path.relpath(os.path.join(root, file), media_path)
+                                    file_list.append(rel_path)
+                            
+                            if item.lower() == 'characters':
+                                asset_info['characters'] = file_count
+                                asset_info['characters_files'] = sorted(file_list)
+                            elif item.lower() == 'locations':
+                                asset_info['locations'] = file_count
+                                asset_info['locations_files'] = sorted(file_list)
+                            elif item.lower() == 'other':
+                                asset_info['other'] = file_count
+                                asset_info['other_files'] = sorted(file_list)
+                            
+                            self.logger.debug(f"Asset directory '{item}': {file_count} files")
+                            
+                        except Exception as e:
+                            self.logger.warning(f"Failed to count files in {item_path}: {e}")
             
             asset_info['total'] = asset_info['characters'] + asset_info['locations'] + asset_info['other']
+            
+            # Log total asset count
+            self.logger.info(f"Total asset files migrated: {asset_info['total']}")
             
             return asset_info
             
@@ -358,7 +390,10 @@ class MigrationEngine:
                 'characters': 0,
                 'locations': 0,
                 'other': 0,
-                'total': 0
+                'total': 0,
+                'characters_files': [],
+                'locations_files': [],
+                'other_files': []
             }
     
     def _validate_migration(self) -> bool:
