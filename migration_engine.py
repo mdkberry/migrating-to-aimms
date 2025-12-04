@@ -6,6 +6,7 @@ import logging
 import shutil
 import os
 import time
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -121,6 +122,9 @@ class MigrationEngine:
             
             # Create target directory structure
             self._create_target_directories()
+            
+            # Create project structure and supporting files
+            self._create_project_structure()
             
             # Create backup if requested
             if self.config.create_backup:
@@ -581,10 +585,8 @@ class MigrationEngine:
         os.makedirs(media_dir, exist_ok=True)
         self.logger.debug(f"Created media directory: {media_dir}")
         
-        # Create report directory
-        report_dir = self.config.report_path
-        os.makedirs(report_dir, exist_ok=True)
-        self.logger.debug(f"Created report directory: {report_dir}")
+        # Note: Report directory is now created by the reporting module
+        # in the logs folder, so we don't create it here anymore
     
     def _create_backup(self):
         """Create backup of source project."""
@@ -616,6 +618,108 @@ class MigrationEngine:
                 self.logger.debug(f"Copied config file: {source_config} -> {target_config}")
             except Exception as e:
                 self.logger.warning(f"Failed to copy config file: {e}")
+    
+    def _create_project_structure(self):
+        """Create project structure and supporting files."""
+        self.logger.info("Creating project structure and supporting files")
+        
+        try:
+            # Create project_config.json
+            self._create_project_config()
+            
+            # Create shot_name_mapping.json in root
+            self._create_shot_name_mapping(root_level=True)
+            
+            # Create data subfolders
+            self._create_data_subfolders()
+            
+            # Create shot_name_mapping.json in data folder
+            self._create_shot_name_mapping(root_level=False)
+            
+            # Create logs folder and files
+            self._create_logs_structure()
+            
+            self.logger.info("Project structure created successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to create project structure: {e}")
+            raise
+    
+    def _create_project_config(self):
+        """Create or update project_config.json."""
+        project_config_path = os.path.join(self.config.target_path, 'project_config.json')
+        
+        # Default project config - ONLY these three fields
+        default_config = {
+            "last_selected_workflow": "",
+            "project_start_date": datetime.now().strftime('%Y-%m-%d'),
+            "last_selected_section": "All Sections"
+        }
+        
+        # If file exists, load and preserve ONLY project_start_date
+        if os.path.exists(project_config_path):
+            try:
+                with open(project_config_path, 'r') as f:
+                    existing_config = json.load(f)
+                
+                # Preserve existing project_start_date if it exists
+                if 'project_start_date' in existing_config:
+                    default_config['project_start_date'] = existing_config['project_start_date']
+                    self.logger.info(f"Preserved existing project_start_date: {default_config['project_start_date']}")
+                
+                # Remove ALL other fields - only keep the three required ones
+                self.logger.info("Removed unwanted fields from existing project_config.json")
+                
+            except Exception as e:
+                self.logger.warning(f"Failed to read existing project_config.json, using defaults: {e}")
+        
+        # Write the config - ONLY the three required fields
+        with open(project_config_path, 'w') as f:
+            json.dump(default_config, f, indent=2)
+        
+        self.logger.info(f"Created project_config.json at {project_config_path}")
+    
+    def _create_shot_name_mapping(self, root_level: bool = True):
+        """Create shot_name_mapping.json file."""
+        if root_level:
+            mapping_path = os.path.join(self.config.target_path, 'shot_name_mapping.json')
+        else:
+            mapping_path = os.path.join(self.config.data_path, 'shot_name_mapping.json')
+        
+        mapping_data = {
+            "version": "1.0",
+            "created": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+            "mapping": {}
+        }
+        
+        with open(mapping_path, 'w') as f:
+            json.dump(mapping_data, f, indent=2)
+        
+        location = "root" if root_level else "data folder"
+        self.logger.info(f"Created shot_name_mapping.json in {location}: {mapping_path}")
+    
+    def _create_data_subfolders(self):
+        """Create csv, backup, and saved subfolders in data directory."""
+        subfolders = ['csv', 'backup', 'saved']
+        
+        for subfolder in subfolders:
+            subfolder_path = os.path.join(self.config.data_path, subfolder)
+            os.makedirs(subfolder_path, exist_ok=True)
+            self.logger.debug(f"Created data subfolder: {subfolder_path}")
+        
+        self.logger.info(f"Created data subfolders: {subfolders}")
+    
+    def _create_logs_structure(self):
+        """Create logs folder and project_log.log file."""
+        logs_path = os.path.join(self.config.target_path, 'logs')
+        os.makedirs(logs_path, exist_ok=True)
+        
+        # Create project_log.log file
+        project_log_path = os.path.join(logs_path, 'project_log.log')
+        with open(project_log_path, 'w') as f:
+            f.write('')  # Create empty file
+        
+        self.logger.info(f"Created logs folder and project_log.log: {logs_path}")
     
     def _get_timestamp(self) -> str:
         """Get current timestamp for backup naming."""

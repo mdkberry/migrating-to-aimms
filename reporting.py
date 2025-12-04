@@ -30,7 +30,9 @@ class ReportGenerator:
         self.target_path = target_path
         self.shot_mapping = shot_mapping
         self.migration_stats = migration_stats or {}
-        self.report_dir = os.path.join(target_path, 'migration_reports')
+        # Move reports to logs folder instead of root level
+        logs_path = os.path.join(target_path, 'logs')
+        self.report_dir = os.path.join(logs_path, 'migration_reports')
         self.logger = create_migration_logger('reporting.generator')
         
     def generate_reports(self):
