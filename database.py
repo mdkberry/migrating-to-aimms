@@ -114,7 +114,7 @@ class DatabaseMigrator:
             )
     
     def _validate_source_database(self) -> bool:
-        """Validate source database structure."""
+        """Validate source database structure and create missing tables."""
         try:
             if not Path(self.source_db_path).exists():
                 self.logger.error(f"Source database not found: {self.source_db_path}")
@@ -124,7 +124,7 @@ class DatabaseMigrator:
                 # Check required tables
                 required_tables = ['shots', 'takes', 'assets', 'meta']
                 cursor = conn.execute("""
-                    SELECT name FROM sqlite_master 
+                    SELECT name FROM sqlite_master
                     WHERE type='table' AND name IN ({})
                 """.format(','.join(['?'] * len(required_tables))), required_tables)
                 
@@ -132,8 +132,21 @@ class DatabaseMigrator:
                 
                 missing_tables = set(required_tables) - existing_tables
                 if missing_tables:
-                    self.logger.error(f"Missing required tables: {missing_tables}")
-                    return False
+                    self.logger.warning(f"Missing required tables: {missing_tables}")
+                    self.logger.info("Creating missing tables...")
+                    
+                    # Create missing tables
+                    for table_name in missing_tables:
+                        if table_name == 'assets':
+                            self._create_assets_table(conn)
+                        elif table_name == 'meta':
+                            self._create_meta_table(conn)
+                        elif table_name in ['shots', 'takes']:
+                            self.logger.error(f"Critical table '{table_name}' is missing. Migration cannot continue.")
+                            return False
+                    
+                    conn.commit()
+                    self.logger.info(f"Created missing tables: {missing_tables}")
                 
                 # Check shots table structure
                 cursor = conn.execute("PRAGMA table_info(shots)")
@@ -150,6 +163,43 @@ class DatabaseMigrator:
         except Exception as e:
             self.logger.error(f"Source database validation failed: {e}")
             return False
+    
+    def _create_assets_table(self, conn):
+        """Create the assets table with correct schema."""
+        self.logger.info("Creating assets table")
+        conn.execute('''
+            CREATE TABLE assets (
+                id_key TEXT PRIMARY KEY,
+                asset_name TEXT,
+                asset_type TEXT,
+                file_path TEXT,
+                starred INTEGER DEFAULT 0,
+                created_date TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc'))
+            )
+        ''')
+    
+    def _create_meta_table(self, conn):
+        """Create the meta table with correct schema and default entries."""
+        self.logger.info("Creating meta table")
+        conn.execute('''
+            CREATE TABLE meta (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+        ''')
+        
+        # Insert default meta entries
+        default_meta = [
+            ('schema_version', '1'),
+            ('app_version', '1.0'),
+            ('created_at', datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')),
+            ('migration_date', datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))
+        ]
+        
+        for key, value in default_meta:
+            conn.execute('INSERT INTO meta (key, value) VALUES (?, ?)', (key, value))
+        
+        self.logger.info("Populated meta table with default entries")
     
     def _create_target_database(self):
         """Create target database with new schema."""

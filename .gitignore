@@ -1,7 +1,7 @@
 # Ignore contents of these folders but keep the folders themselves
 /current_project/
-#/old_project/
-#/transfer_folder/
+/old_project/
+/transfer_folder/
 /project_*/
 /project_The_Highwayman/
 

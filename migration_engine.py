@@ -710,7 +710,7 @@ class MigrationEngine:
     
     def _create_data_subfolders(self):
         """Create csv, backup, and saved subfolders in data directory."""
-        subfolders = ['csv', 'backup', 'saved']
+        subfolders = ['csv', 'backup', 'saves']
         
         for subfolder in subfolders:
             subfolder_path = os.path.join(self.config.data_path, subfolder)

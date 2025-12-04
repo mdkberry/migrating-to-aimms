@@ -133,7 +133,7 @@ YourProjectName/
 │   ├── 📄 shot_name_mapping.json       # Shot name to ID mapping (data folder)
 │   ├── 📁 csv/                         # CSV import/export files
 │   ├── 📁 backup/                      # Database backup files
-│   └── 📁 saved/                       # Saved project files
+│   └── 📁 saves/                       # Saved project files
 ├── 📁 media/                           # Media files organized by shot_id
 │   ├── 1/                              # Shot ID 1
 │   │   ├── video_01.mp4
@@ -185,7 +185,7 @@ Two copies are created:
 ### Data Subfolders (used by AIMMS version 1.0 Storyboard Management software)
 - **csv/**: For CSV import/export operations
 - **backup/**: For database backup files
-- **saved/**: For saved project states
+- **saves/**: For saved project states
 
 ### Logs Structure
 - **project_log.log**: AIMMS version 1.0 activity logging
