@@ -295,6 +295,9 @@ def get_media_file_type(file_path: str) -> str:
             return 'image'
         elif filename.endswith('.jpg') or filename.endswith('.jpeg'):
             return 'image'
+    elif filename.startswith('base_'):
+        if filename.endswith('.png'):
+            return 'base_image'
     elif filename.startswith('asset_'):
         return 'asset'
     

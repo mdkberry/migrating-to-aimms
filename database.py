@@ -523,6 +523,67 @@ class DatabaseMigrator:
         conn.commit()
         self.logger.info("Database indexes created successfully")
     
+    def create_video_workflow_entries(self, media_path: str, shot_mapping: Dict[str, int]) -> bool:
+        """
+        Create missing video_workflow entries for video thumbnails.
+        
+        Args:
+            media_path: Path to media directory
+            shot_mapping: Shot name to ID mapping
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            self.logger.info("Creating missing video_workflow entries for video thumbnails")
+            
+            with sqlite3.connect(self.target_db_path) as conn:
+                # Get all existing video thumbnails from media folders
+                for shot_name, shot_id in shot_mapping.items():
+                    media_folder = os.path.join(media_path, str(shot_id))
+                    
+                    if not os.path.exists(media_folder):
+                        continue
+                    
+                    # Find video thumbnails in this folder
+                    for item in os.listdir(media_folder):
+                        if item.startswith('video_') and item.endswith('.png'):
+                            video_name = item.replace('.png', '.mp4')
+                            file_path = os.path.join(media_folder, item)
+                            
+                            # Check if corresponding video exists
+                            video_path = os.path.join(media_folder, video_name)
+                            if not os.path.exists(video_path):
+                                self.logger.warning(f"Video thumbnail {item} has no corresponding video in shot {shot_name}")
+                                continue
+                            
+                            # Check if video_workflow entry already exists
+                            cursor = conn.execute('''
+                                SELECT COUNT(*) FROM takes
+                                WHERE shot_id = ? AND file_path = ? AND take_type = 'video_workflow'
+                            ''', (shot_id, file_path))
+                            
+                            if cursor.fetchone()[0] == 0:
+                                # Create video_workflow entry
+                                take_id = generate_uuid()
+                                created_date = convert_date_to_utc(None)  # Current time
+                                
+                                conn.execute('''
+                                    INSERT INTO takes (
+                                        take_id, shot_id, take_type, file_path, starred, created_date
+                                    ) VALUES (?, ?, ?, ?, ?, ?)
+                                ''', (take_id, shot_id, 'video_workflow', file_path, 0, created_date))
+                                
+                                self.logger.info(f"Created video_workflow entry for {item} in shot {shot_name}")
+                
+                conn.commit()
+                self.logger.info("Video workflow entries creation completed")
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"Failed to create video workflow entries: {e}")
+            return False
+    
     def get_database_info(self, db_path: Optional[str] = None) -> Optional[Dict]:
         """
         Get information about a database.

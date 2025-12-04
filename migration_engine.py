@@ -332,12 +332,24 @@ class MigrationEngine:
             # Execute validation
             validation_result = validator.validate()
             
+            # Create missing video_workflow entries after media validation
+            if validation_result.success or len([e for e in validation_result.errors if 'thumbnail' not in e]) == 0:
+                # Only create workflow entries if validation mostly passed or only thumbnail issues
+                db_migrator = DatabaseMigrator(
+                    source_db_path=self.config.get_source_db_path(),
+                    target_db_path=self.config.get_target_db_path()
+                )
+                db_migrator.create_video_workflow_entries(
+                    media_path=self.config.get_target_media_path(),
+                    shot_mapping=self.shot_mapping
+                )
+            
             duration = (datetime.now() - start_time).total_seconds()
             
             if validation_result.success:
                 phase_logger.end_operation(
-                    "Validation Phase", 
-                    True, 
+                    "Validation Phase",
+                    True,
                     f"Duration: {duration:.2f} seconds"
                 )
                 
@@ -358,8 +370,8 @@ class MigrationEngine:
                 return True
             else:
                 phase_logger.end_operation(
-                    "Validation Phase", 
-                    False, 
+                    "Validation Phase",
+                    False,
                     f"Duration: {duration:.2f} seconds, "
                     f"Errors: {len(validation_result.errors)}"
                 )

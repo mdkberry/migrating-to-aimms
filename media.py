@@ -262,27 +262,58 @@ class MediaMigrator:
             video_files = [f for f in files if f.startswith('video_') and f.endswith('.mp4')]
             thumbnail_files = [f for f in files if f.startswith('video_') and f.endswith('.png')]
             image_files = [f for f in files if f.startswith('image_')]
+            base_image_files = [f for f in files if f.startswith('base_') and f.endswith('.png')]
             asset_files = [f for f in files if f.startswith('asset_')]
             
             # Build context message
             context_msg = f" (Shot: {shot_name} → Folder: {folder_name})" if shot_name else f" (Folder: {folder_name})"
             
-            # Check each video has a thumbnail
+            # Enhanced video/thumbnail validation logic
             for video_file in video_files:
+                video_path = os.path.join(folder_path, video_file)
                 thumbnail_name = video_file.replace('.mp4', '.png')
-                if thumbnail_name not in thumbnail_files:
-                    error_msg = f"Missing thumbnail for {video_file}{context_msg}"
-                    errors.append(error_msg)
-                    self.logger.error(error_msg)
+                thumbnail_path = os.path.join(folder_path, thumbnail_name)
+                
+                # Check if video file has size
+                video_is_placeholder = is_file_zero_size(video_path)
+                
+                if video_is_placeholder:
+                    # Zero-size video placeholder - create matching zero-size PNG if needed
+                    if thumbnail_name not in thumbnail_files:
+                        # Create zero-size placeholder PNG
+                        try:
+                            with open(thumbnail_path, 'wb') as f:
+                                f.write(b'')  # Create empty file
+                            warning_msg = f"Created zero-size thumbnail placeholder for {video_file}{context_msg}"
+                            warnings.append(warning_msg)
+                            self.logger.warning(warning_msg)
+                        except Exception as e:
+                            error_msg = f"Failed to create thumbnail placeholder for {video_file}{context_msg}: {e}"
+                            errors.append(error_msg)
+                            self.logger.error(error_msg)
+                    else:
+                        # Thumbnail exists, ensure it's also zero-size
+                        if not is_file_zero_size(thumbnail_path):
+                            warning_msg = f"Video placeholder {video_file} has non-zero-size thumbnail{context_msg}"
+                            warnings.append(warning_msg)
+                            self.logger.warning(warning_msg)
                 else:
-                    # Check thumbnail is not zero size
-                    thumbnail_path = os.path.join(folder_path, thumbnail_name)
-                    if is_file_zero_size(thumbnail_path):
-                        error_msg = f"Zero-size thumbnail: {thumbnail_path}{context_msg}"
+                    # Valid video file - must have valid thumbnail
+                    if thumbnail_name not in thumbnail_files:
+                        error_msg = f"Missing thumbnail for valid video {video_file}{context_msg} - This is required for AIMMS app"
                         errors.append(error_msg)
                         self.logger.error(error_msg)
+                    else:
+                        # Check thumbnail is not zero size
+                        if is_file_zero_size(thumbnail_path):
+                            error_msg = f"Valid video {video_file} has zero-size thumbnail{context_msg} - This is required for AIMMS app"
+                            errors.append(error_msg)
+                            self.logger.error(error_msg)
+                        else:
+                            # Both video and thumbnail are valid
+                            self.logger.debug(f"Valid video/thumbnail pair: {video_file}/{thumbnail_name}{context_msg}")
             
-            # Check for orphaned thumbnails
+            # Check for orphaned thumbnails (not errors, just warnings)
             for thumbnail_file in thumbnail_files:
                 video_name = thumbnail_file.replace('.png', '.mp4')
                 if video_name not in video_files:
@@ -290,10 +321,10 @@ class MediaMigrator:
                     warnings.append(warning_msg)
                     self.logger.warning(warning_msg)
             
-            # Check for zero-size files
+            # Check for zero-size files (already handled above, but keep for other file types)
             for file_name in files:
                 file_path = os.path.join(folder_path, file_name)
-                if is_file_zero_size(file_path):
+                if is_file_zero_size(file_path) and not file_name.startswith('video_'):
                     warning_msg = f"Zero-size file: {file_path}{context_msg}"
                     warnings.append(warning_msg)
                     self.logger.warning(warning_msg)
@@ -304,6 +335,7 @@ class MediaMigrator:
                             f"{len(video_files)} videos, "
                             f"{len(thumbnail_files)} thumbnails, "
                             f"{len(image_files)} images, "
+                            f"{len(base_image_files)} base_images, "
                             f"{len(asset_files)} assets")
             
             success = len(errors) == 0
@@ -359,6 +391,7 @@ class MediaMigrator:
                 media_info['summary']['video_files'] += folder_info['video_count']
                 media_info['summary']['thumbnail_files'] += folder_info['thumbnail_count']
                 media_info['summary']['image_files'] += folder_info['image_count']
+                media_info['summary']['base_image_files'] += folder_info['base_image_count']
                 media_info['summary']['asset_files'] += folder_info['asset_count']
             
             return media_info
@@ -376,6 +409,7 @@ class MediaMigrator:
             'video_count': 0,
             'thumbnail_count': 0,
             'image_count': 0,
+            'base_image_count': 0,
             'asset_count': 0,
             'files': []
         }
@@ -402,6 +436,8 @@ class MediaMigrator:
                     folder_info['thumbnail_count'] += 1
                 elif file_type == 'image':
                     folder_info['image_count'] += 1
+                elif file_type == 'base_image':
+                    folder_info['base_image_count'] += 1
                 elif file_type == 'asset':
                     folder_info['asset_count'] += 1
                 

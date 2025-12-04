@@ -279,18 +279,37 @@ class Validator:
             
             # Check each video has a thumbnail
             for video_file in video_files:
+                video_path = os.path.join(folder_path, video_file)
                 thumbnail_name = video_file.replace('.mp4', '.png')
+                thumbnail_path = os.path.join(folder_path, thumbnail_name)
+                
                 if thumbnail_name not in thumbnail_files:
                     error_msg = f"Missing thumbnail for {video_file} in folder {folder_path}"
                     errors.append(error_msg)
                     self.logger.error(error_msg)
                 else:
-                    # Check thumbnail is not zero size
-                    thumbnail_path = os.path.join(folder_path, thumbnail_name)
-                    if is_file_zero_size(thumbnail_path):
-                        error_msg = f"Zero-size thumbnail: {thumbnail_path}"
-                        errors.append(error_msg)
-                        self.logger.error(error_msg)
+                    # Check thumbnail size based on video size
+                    video_is_placeholder = is_file_zero_size(video_path)
+                    thumbnail_is_placeholder = is_file_zero_size(thumbnail_path)
+                    
+                    if video_is_placeholder:
+                        # Zero-size video should have zero-size thumbnail (warning, not error)
+                        if not thumbnail_is_placeholder:
+                            warning_msg = f"Video placeholder {video_file} has non-zero-size thumbnail in {folder_path}"
+                            warnings.append(warning_msg)
+                            self.logger.warning(warning_msg)
+                        else:
+                            # Both are placeholders - this is correct
+                            self.logger.debug(f"Valid placeholder pair: {video_file}/{thumbnail_name} in {folder_path}")
+                    else:
+                        # Valid video should have valid thumbnail (error if zero-size)
+                        if thumbnail_is_placeholder:
+                            error_msg = f"Valid video {video_file} has zero-size thumbnail in {folder_path}"
+                            errors.append(error_msg)
+                            self.logger.error(error_msg)
+                        else:
+                            # Both are valid - this is correct
+                            self.logger.debug(f"Valid video/thumbnail pair: {video_file}/{thumbnail_name} in {folder_path}")
             
             # Check for orphaned thumbnails
             for thumbnail_file in thumbnail_files:
