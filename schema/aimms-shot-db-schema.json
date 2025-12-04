@@ -1,0 +1,306 @@
+{
+  "metadata": {
+    "extracted_at": "2025-12-05T08:54:08.435254",
+    "database_path": "current_project/data/shots.db",
+    "sqlite_version": "3.51.0"
+  },
+  "tables": {
+    "assets": "CREATE TABLE assets (\n                id_key TEXT PRIMARY KEY,\n                asset_name TEXT,\n                asset_type TEXT,\n                file_path TEXT,\n                starred INTEGER DEFAULT 0,\n                created_date TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc'))\n            )",
+    "deleted_shots": "CREATE TABLE deleted_shots (\n                id INTEGER PRIMARY KEY AUTOINCREMENT,\n                old_shot_id INTEGER NOT NULL,\n                shot_name TEXT,\n                created_date TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc'))\n            )",
+    "meta": "CREATE TABLE meta (\n                key TEXT PRIMARY KEY,\n                value TEXT\n            )",
+    "shots": "CREATE TABLE shots (\n                shot_id INTEGER PRIMARY KEY AUTOINCREMENT,\n                order_number INTEGER,\n                shot_name TEXT,\n                section TEXT,\n                description TEXT,\n                image_prompt TEXT,\n                colour_scheme_image TEXT,\n                time_of_day TEXT,\n                location TEXT,\n                country TEXT,\n                year TEXT,\n                video_prompt TEXT,\n                created_date TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc'))\n            )",
+    "sqlite_sequence": "CREATE TABLE sqlite_sequence(name,seq)",
+    "takes": "CREATE TABLE takes (\n                take_id TEXT PRIMARY KEY,\n                shot_id INTEGER,\n                take_type TEXT,\n                file_path TEXT,\n                starred INTEGER DEFAULT 0,\n                created_date TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc')),\n                FOREIGN KEY (shot_id) REFERENCES shots(shot_id)\n            )",
+    "assets_columns": [
+      {
+        "cid": 0,
+        "name": "id_key",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": true
+      },
+      {
+        "cid": 1,
+        "name": "asset_name",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 2,
+        "name": "asset_type",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 3,
+        "name": "file_path",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 4,
+        "name": "starred",
+        "type": "INTEGER",
+        "notnull": false,
+        "default_value": "0",
+        "pk": false
+      },
+      {
+        "cid": 5,
+        "name": "created_date",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": "strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc')",
+        "pk": false
+      }
+    ],
+    "deleted_shots_columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": false,
+        "default_value": null,
+        "pk": true
+      },
+      {
+        "cid": 1,
+        "name": "old_shot_id",
+        "type": "INTEGER",
+        "notnull": true,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 2,
+        "name": "shot_name",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 3,
+        "name": "created_date",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": "strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc')",
+        "pk": false
+      }
+    ],
+    "meta_columns": [
+      {
+        "cid": 0,
+        "name": "key",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": true
+      },
+      {
+        "cid": 1,
+        "name": "value",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      }
+    ],
+    "shots_columns": [
+      {
+        "cid": 0,
+        "name": "shot_id",
+        "type": "INTEGER",
+        "notnull": false,
+        "default_value": null,
+        "pk": true
+      },
+      {
+        "cid": 1,
+        "name": "order_number",
+        "type": "INTEGER",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 2,
+        "name": "shot_name",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 3,
+        "name": "section",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 4,
+        "name": "description",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 5,
+        "name": "image_prompt",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 6,
+        "name": "colour_scheme_image",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 7,
+        "name": "time_of_day",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 8,
+        "name": "location",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 9,
+        "name": "country",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 10,
+        "name": "year",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 11,
+        "name": "video_prompt",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 12,
+        "name": "created_date",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": "strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc')",
+        "pk": false
+      }
+    ],
+    "sqlite_sequence_columns": [
+      {
+        "cid": 0,
+        "name": "name",
+        "type": "",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 1,
+        "name": "seq",
+        "type": "",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      }
+    ],
+    "takes_columns": [
+      {
+        "cid": 0,
+        "name": "take_id",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": true
+      },
+      {
+        "cid": 1,
+        "name": "shot_id",
+        "type": "INTEGER",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 2,
+        "name": "take_type",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 3,
+        "name": "file_path",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": null,
+        "pk": false
+      },
+      {
+        "cid": 4,
+        "name": "starred",
+        "type": "INTEGER",
+        "notnull": false,
+        "default_value": "0",
+        "pk": false
+      },
+      {
+        "cid": 5,
+        "name": "created_date",
+        "type": "TEXT",
+        "notnull": false,
+        "default_value": "strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc')",
+        "pk": false
+      }
+    ]
+  },
+  "indexes": {
+    "idx_deleted_shots_old_id": "CREATE INDEX idx_deleted_shots_old_id ON deleted_shots(old_shot_id)",
+    "idx_shots_order": "CREATE INDEX idx_shots_order ON shots(order_number)",
+    "idx_shots_section": "CREATE INDEX idx_shots_section ON shots(section)",
+    "idx_shots_shot_name": "CREATE INDEX idx_shots_shot_name ON shots(shot_name)",
+    "idx_takes_shot_id": "CREATE INDEX idx_takes_shot_id ON takes(shot_id)",
+    "idx_takes_shot_type": "CREATE INDEX idx_takes_shot_type ON takes(shot_id, take_type)",
+    "idx_takes_starred": "CREATE INDEX idx_takes_starred ON takes(starred)",
+    "idx_takes_type": "CREATE INDEX idx_takes_type ON takes(take_type)",
+    "sqlite_autoindex_assets_1": null,
+    "sqlite_autoindex_meta_1": null,
+    "sqlite_autoindex_takes_1": null
+  },
+  "views": {},
+  "triggers": {}
+}

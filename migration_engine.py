@@ -171,10 +171,11 @@ class MigrationEngine:
         start_time = datetime.now()
         
         try:
-            # Initialize database migrator
+            # Initialize database migrator with schema path
             db_migrator = DatabaseMigrator(
                 source_db_path=self.config.get_source_db_path(),
-                target_db_path=self.config.get_target_db_path()
+                target_db_path=self.config.get_target_db_path(),
+                schema_path="schema/aimms-shot-db-schema.json"
             )
             
             # Execute database migration
@@ -423,7 +424,8 @@ class MigrationEngine:
                 # Only create workflow entries if validation mostly passed or only thumbnail issues
                 db_migrator = DatabaseMigrator(
                     source_db_path=self.config.get_source_db_path(),
-                    target_db_path=self.config.get_target_db_path()
+                    target_db_path=self.config.get_target_db_path(),
+                    schema_path="schema/aimms-shot-db-schema.json"
                 )
                 db_migrator.create_video_workflow_entries(
                     media_path=self.config.get_target_media_path(),

@@ -15,24 +15,30 @@ from pathlib import Path
 from models import MigrationResult, ShotInfo, TakeInfo, AssetInfo
 from utils import convert_date_to_utc, update_file_path, generate_uuid
 from logger import create_migration_logger
+from schema_manager import SchemaManager
 
 logger = create_migration_logger('database')
 
 class DatabaseMigrator:
     """Handles database schema migration."""
     
-    def __init__(self, source_db_path: str, target_db_path: str):
+    def __init__(self, source_db_path: str, target_db_path: str, schema_path: str = "schema/aimms-shot-db-schema.json"):
         """
         Initialize database migrator.
         
         Args:
             source_db_path: Path to source database
             target_db_path: Path to target database
+            schema_path: Path to schema JSON file
         """
         self.source_db_path = source_db_path
         self.target_db_path = target_db_path
         self.shot_mapping: Dict[str, int] = {}
         self.logger = create_migration_logger('database.migrator')
+        
+        # Initialize schema manager
+        self.schema_manager = SchemaManager(schema_path)
+        self.logger.info(f"Using schema file: {schema_path}")
         
     def migrate(self) -> MigrationResult:
         """
@@ -60,8 +66,22 @@ class DatabaseMigrator:
                     warnings=[]
                 )
             
-            # Create target database
-            self._create_target_database()
+            # Create target database using schema manager
+            if not self.schema_manager.load_schema():
+                return MigrationResult(
+                    success=False,
+                    shot_mapping={},
+                    errors=["Failed to load schema from file"],
+                    warnings=[]
+                )
+            
+            if not self._create_target_database():
+                return MigrationResult(
+                    success=False,
+                    shot_mapping={},
+                    errors=["Failed to create target database from schema"],
+                    warnings=[]
+                )
             
             # Migrate tables
             with sqlite3.connect(self.source_db_path) as source_conn:
@@ -201,75 +221,64 @@ class DatabaseMigrator:
         
         self.logger.info("Populated meta table with default entries")
     
-    def _create_target_database(self):
-        """Create target database with new schema."""
-        self.logger.info("Creating target database schema")
+    def _create_target_database(self) -> bool:
+        """
+        Create target database using schema from JSON file.
         
-        with sqlite3.connect(self.target_db_path) as conn:
-            # Create shots table
-            conn.execute('''
-                CREATE TABLE shots (
-                    shot_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    order_number INTEGER,
-                    shot_name TEXT,
-                    section TEXT,
-                    description TEXT,
-                    image_prompt TEXT,
-                    colour_scheme_image TEXT,
-                    time_of_day TEXT,
-                    location TEXT,
-                    country TEXT,
-                    year TEXT,
-                    video_prompt TEXT,
-                    created_date TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc'))
-                )
-            ''')
+        Returns:
+            True if successful, False otherwise
+        """
+        self.logger.info("Creating target database schema from JSON file")
+        
+        try:
+            # Check if database already exists and has the correct schema
+            if self._database_schema_exists():
+                self.logger.info("Target database already exists with correct schema")
+                return True
             
-            # Create takes table
-            conn.execute('''
-                CREATE TABLE takes (
-                    take_id TEXT PRIMARY KEY,
-                    shot_id INTEGER,
-                    take_type TEXT,
-                    file_path TEXT,
-                    starred INTEGER DEFAULT 0,
-                    created_date TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc')),
-                    FOREIGN KEY (shot_id) REFERENCES shots(shot_id)
-                )
-            ''')
+            # Use schema manager to create database
+            success = self.schema_manager.create_database_from_schema(self.target_db_path)
             
-            # Create assets table
-            conn.execute('''
-                CREATE TABLE assets (
-                    id_key TEXT PRIMARY KEY,
-                    asset_name TEXT,
-                    asset_type TEXT,
-                    file_path TEXT,
-                    starred INTEGER DEFAULT 0,
-                    created_date TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc'))
-                )
-            ''')
+            if success:
+                self.logger.info("Target database schema created successfully from schema file")
+                
+                # Validate the created database
+                validation_results = self.schema_manager.validate_database_schema(self.target_db_path)
+                if not validation_results['valid']:
+                    self.logger.warning("Database created but validation found issues:")
+                    if validation_results['missing_tables']:
+                        self.logger.warning(f"  Missing tables: {validation_results['missing_tables']}")
+                    if validation_results['missing_indexes']:
+                        self.logger.warning(f"  Missing indexes: {validation_results['missing_indexes']}")
+                
+                return True
+            else:
+                self.logger.error("Failed to create target database from schema")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error creating target database: {e}")
+            return False
+    
+    def _database_schema_exists(self) -> bool:
+        """
+        Check if the target database already exists with the correct schema.
+        
+        Returns:
+            True if database exists with correct schema, False otherwise
+        """
+        try:
+            if not os.path.exists(self.target_db_path):
+                return False
             
-            # Create meta table
-            conn.execute('''
-                CREATE TABLE meta (
-                    key TEXT PRIMARY KEY,
-                    value TEXT
-                )
-            ''')
+            # Validate the existing database schema
+            validation_results = self.schema_manager.validate_database_schema(self.target_db_path)
             
-            # Create deleted_shots table
-            conn.execute('''
-                CREATE TABLE deleted_shots (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    old_shot_id INTEGER NOT NULL,
-                    shot_name TEXT,
-                    created_date TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc'))
-                )
-            ''')
+            return validation_results['valid']
             
-            conn.commit()
-            self.logger.info("Target database schema created successfully")
+        except Exception as e:
+            self.logger.warning(f"Could not validate existing database: {e}")
+            return False
     
     def _migrate_shots_table(self, source_conn, target_conn) -> MigrationResult:
         """Migrate shots table with schema transformation."""
