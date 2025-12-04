@@ -204,10 +204,13 @@ AIMMS_Migration_Tool/
 │   └── put-you-old-project-in-here-delete-this-info-file
 ├── 📁 transfer_folder/        # 📂 Migration workspace
 │   └── use-this-folder-as-migration-folder-or-name-your-own
+├── 📁 schema/                 # 🗃️  Database schema definitions
+│   └── aimms-shot-db-schema.json  # Database schema for version control
 ├── 📄 main.py                 # 🚀 CLI entry point
 ├── 📄 migration_engine.py     # ⚙️  Migration orchestrator
 ├── 📄 config.py               # ⚙️  Configuration management
 ├── 📄 database.py             # 🗄️  Database migration
+├── 📄 schema_manager.py       # 🗃️  Schema management module
 ├── 📄 media.py                # 📁 Media file migration
 ├── 📄 validation.py           # ✅ Validation engine
 ├── 📄 reporting.py            # 📊 Report generation
@@ -215,6 +218,10 @@ AIMMS_Migration_Tool/
 ├── 📄 utils.py                # 🔧 Utility functions
 └── 📄 models.py               # 📋 Data models
 ```
+
+### Schema Management
+
+The migration tool uses a schema file (`schema/aimms-shot-db-schema.json`) to manage database structure and ensure consistency across versions. This JSON file contains the complete database schema including table definitions, column specifications, and indexes. When new AIMMS versions are released with database schema changes, this file should be updated with the schema from a current `shots.db` file to ensure proper migration.
 
 ## Media File Naming Conventions For AIMMS version 1.0
 

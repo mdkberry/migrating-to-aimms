@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "created_at": "2025-12-05T08:54:08.435254",
+    "description": "Meta table entries for AIMMS migration tool",
+    "version": "1.0"
+  },
+  "meta_entries": {
+    "schema_version": {
+      "value": "1",
+      "description": "Database schema version",
+      "required": true
+    },
+    "app_version": {
+      "value": "1.0",
+      "description": "Application version",
+      "required": true
+    },
+    "created_at": {
+      "value": "CURRENT_UTC_ISO8601",
+      "description": "Database creation timestamp in UTC ISO 8601 format with trailing Z",
+      "required": true,
+      "dynamic": true
+    },
+    "migration_date": {
+      "value": "CURRENT_UTC_ISO8601",
+      "description": "Last migration timestamp in UTC ISO 8601 format with trailing Z",
+      "required": true,
+      "dynamic": true,
+      "overwrite_existing": true
+    },
+    "author": {
+      "value": "your name here",
+      "description": "Project author name",
+      "required": false,
+      "create_if_missing": true
+    },
+    "project_name": {
+      "value": "your project name here",
+      "description": "Project name",
+      "required": false,
+      "create_if_missing": true
+    },
+    "description": {
+      "value": "add project description here",
+      "description": "Project description",
+      "required": false,
+      "create_if_missing": true
+    }
+  }
+}

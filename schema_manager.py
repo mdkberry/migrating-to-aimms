@@ -25,15 +25,18 @@ class SchemaInfo(NamedTuple):
 class SchemaManager:
     """Manages database schema operations using JSON schema files."""
     
-    def __init__(self, schema_path: str = "schema/aimms-shot-db-schema.json"):
+    def __init__(self, schema_path: str = "schema/aimms-shot-db-schema.json", meta_entries_path: str = "schema/aimms-meta-entries.json"):
         """
         Initialize schema manager.
         
         Args:
             schema_path: Path to schema JSON file
+            meta_entries_path: Path to meta entries JSON file
         """
         self.schema_path = schema_path
+        self.meta_entries_path = meta_entries_path
         self.schema_data = None
+        self.meta_entries_data = None
         self.logger = logging.getLogger(__name__)
         
     def load_schema(self) -> bool:
@@ -59,6 +62,68 @@ class SchemaManager:
         except Exception as e:
             self.logger.error(f"Failed to load schema: {e}")
             return False
+    
+    def load_meta_entries(self) -> bool:
+        """
+        Load meta entries from JSON file.
+        
+        Returns:
+            True if meta entries loaded successfully, False otherwise
+        """
+        try:
+            if not Path(self.meta_entries_path).exists():
+                self.logger.error(f"Meta entries file not found: {self.meta_entries_path}")
+                return False
+            
+            with open(self.meta_entries_path, 'r', encoding='utf-8') as f:
+                self.meta_entries_data = json.load(f)
+            
+            self.logger.info(f"Meta entries loaded successfully from: {self.meta_entries_path}")
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to load meta entries: {e}")
+            return False
+    
+    def get_meta_entries(self) -> Optional[Dict]:
+        """
+        Get meta entries with dynamic values resolved.
+        
+        Returns:
+            Dictionary with meta entries or None if not loaded
+        """
+        if not self.meta_entries_data:
+            return None
+        
+        meta_entries = {}
+        current_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        
+        for key, entry in self.meta_entries_data['meta_entries'].items():
+            value = entry['value']
+            
+            # Handle dynamic values
+            if entry.get('dynamic', False) and value == 'CURRENT_UTC_ISO8601':
+                value = current_time
+            
+            meta_entries[key] = value
+        
+        return meta_entries
+    
+    def get_meta_entry_config(self, key: str) -> Optional[Dict]:
+        """
+        Get configuration for a specific meta entry.
+        
+        Args:
+            key: Meta entry key
+            
+        Returns:
+            Configuration dictionary or None if not found
+        """
+        if not self.meta_entries_data:
+            return None
+        
+        return self.meta_entries_data['meta_entries'].get(key)
     
     def get_schema_info(self) -> Optional[SchemaInfo]:
         """
@@ -171,6 +236,78 @@ class SchemaManager:
             
         except Exception as e:
             self.logger.error(f"Failed to create indexes: {e}")
+            return False
+    
+    def create_meta_table_with_entries(self, conn) -> bool:
+        """
+        Create meta table and populate it with default entries.
+        
+        Args:
+            conn: SQLite connection
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            self.logger.info("Creating meta table with default entries")
+            
+            # Create meta table
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS meta (
+                    key TEXT PRIMARY KEY,
+                    value TEXT
+                )
+            ''')
+            
+            # Load meta entries if not already loaded
+            if not self.meta_entries_data:
+                if not self.load_meta_entries():
+                    self.logger.error("Failed to load meta entries")
+                    return False
+            
+            # Get meta entries with resolved values
+            meta_entries = self.get_meta_entries()
+            if not meta_entries:
+                self.logger.error("No meta entries available")
+                return False
+            
+            # Insert or update meta entries
+            for key, value in meta_entries.items():
+                config = self.get_meta_entry_config(key)
+                
+                if config:
+                    # Check if we should overwrite existing entries
+                    if config.get('overwrite_existing', False):
+                        # Always update
+                        conn.execute('''
+                            INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)
+                        ''', (key, value))
+                        self.logger.info(f"Updated meta entry: {key} = {value}")
+                    elif config.get('create_if_missing', False):
+                        # Only insert if not exists
+                        conn.execute('''
+                            INSERT OR IGNORE INTO meta (key, value) VALUES (?, ?)
+                        ''', (key, value))
+                        self.logger.info(f"Created meta entry if missing: {key} = {value}")
+                    else:
+                        # Always insert (for required entries)
+                        conn.execute('''
+                            INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)
+                        ''', (key, value))
+                        self.logger.info(f"Set meta entry: {key} = {value}")
+                else:
+                    # Default behavior for entries without config
+                    conn.execute('''
+                        INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)
+                    ''', (key, value))
+                    self.logger.info(f"Set meta entry: {key} = {value}")
+            
+            conn.commit()
+            self.logger.info("Meta table created and populated successfully")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to create meta table with entries: {e}")
             return False
     
     def get_table_schema(self, table_name: str) -> Optional[Dict]:

@@ -22,7 +22,7 @@ logger = create_migration_logger('database')
 class DatabaseMigrator:
     """Handles database schema migration."""
     
-    def __init__(self, source_db_path: str, target_db_path: str, schema_path: str = "schema/aimms-shot-db-schema.json"):
+    def __init__(self, source_db_path: str, target_db_path: str, schema_path: str = "schema/aimms-shot-db-schema.json", meta_entries_path: str = "schema/aimms-meta-entries.json"):
         """
         Initialize database migrator.
         
@@ -30,6 +30,7 @@ class DatabaseMigrator:
             source_db_path: Path to source database
             target_db_path: Path to target database
             schema_path: Path to schema JSON file
+            meta_entries_path: Path to meta entries JSON file
         """
         self.source_db_path = source_db_path
         self.target_db_path = target_db_path
@@ -37,8 +38,9 @@ class DatabaseMigrator:
         self.logger = create_migration_logger('database.migrator')
         
         # Initialize schema manager
-        self.schema_manager = SchemaManager(schema_path)
+        self.schema_manager = SchemaManager(schema_path, meta_entries_path)
         self.logger.info(f"Using schema file: {schema_path}")
+        self.logger.info(f"Using meta entries file: {meta_entries_path}")
         
     def migrate(self) -> MigrationResult:
         """
@@ -198,28 +200,7 @@ class DatabaseMigrator:
             )
         ''')
     
-    def _create_meta_table(self, conn):
-        """Create the meta table with correct schema and default entries."""
-        self.logger.info("Creating meta table")
-        conn.execute('''
-            CREATE TABLE meta (
-                key TEXT PRIMARY KEY,
-                value TEXT
-            )
-        ''')
-        
-        # Insert default meta entries
-        default_meta = [
-            ('schema_version', '1'),
-            ('app_version', '1.0'),
-            ('created_at', datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')),
-            ('migration_date', datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'))
-        ]
-        
-        for key, value in default_meta:
-            conn.execute('INSERT INTO meta (key, value) VALUES (?, ?)', (key, value))
-        
-        self.logger.info("Populated meta table with default entries")
+    # Note: _create_meta_table method removed - now handled by schema_manager.create_meta_table_with_entries()
     
     def _create_target_database(self) -> bool:
         """
@@ -236,11 +217,24 @@ class DatabaseMigrator:
                 self.logger.info("Target database already exists with correct schema")
                 return True
             
+            # Ensure schema is loaded before creating database
+            if not self.schema_manager.schema_data:
+                if not self.schema_manager.load_schema():
+                    self.logger.error("Failed to load schema")
+                    return False
+            
             # Use schema manager to create database
             success = self.schema_manager.create_database_from_schema(self.target_db_path)
             
             if success:
                 self.logger.info("Target database schema created successfully from schema file")
+                
+                # Create meta table with entries using schema manager
+                with sqlite3.connect(self.target_db_path) as conn:
+                    meta_success = self.schema_manager.create_meta_table_with_entries(conn)
+                    if not meta_success:
+                        self.logger.error("Failed to create meta table with entries")
+                        return False
                 
                 # Validate the created database
                 validation_results = self.schema_manager.validate_database_schema(self.target_db_path)
@@ -510,37 +504,85 @@ class DatabaseMigrator:
         try:
             self.logger.info("Migrating meta table")
             
+            # Load meta entries from schema manager
+            if not self.schema_manager.meta_entries_data:
+                if not self.schema_manager.load_meta_entries():
+                    error_msg = "Failed to load meta entries from schema manager"
+                    errors.append(error_msg)
+                    self.logger.error(error_msg)
+                    return MigrationResult(success=False, shot_mapping={}, errors=errors, warnings=warnings)
+            
             # Get meta data from old table
             cursor = source_conn.execute('SELECT key, value FROM meta')
             meta_data = cursor.fetchall()
             
-            # Insert into new table
+            # Process existing meta data
+            existing_meta = {}
             for key, value in meta_data:
-                # Validate version numbers
-                if key == 'schema_version':
-                    value = '1'  # Force to 1
-                elif key == 'app_version':
-                    value = '1.0'  # Force to 1.0
-                
-                # Convert created_at date format
-                if key == 'created_at':
-                    value = convert_date_to_utc(value)
-                
-                try:
-                    target_conn.execute('''
-                        INSERT INTO meta (key, value) VALUES (?, ?)
-                    ''', (key, value))
-                    
-                except Exception as e:
-                    error_msg = f"Failed to migrate meta key {key}: {e}"
-                    errors.append(error_msg)
-                    self.logger.error(error_msg)
+                existing_meta[key] = value
             
-            # Add migration timestamp
-            target_conn.execute('''
-                INSERT OR REPLACE INTO meta (key, value) 
-                VALUES (?, ?)
-            ''', ('migration_date', datetime.utcnow().isoformat()))
+            # Get meta entries configuration
+            meta_entries_config = self.schema_manager.meta_entries_data['meta_entries']
+            
+            # Process each meta entry based on configuration
+            for key, config in meta_entries_config.items():
+                if key in existing_meta:
+                    # Handle existing entries
+                    value = existing_meta[key]
+                    
+                    # Validate version numbers
+                    if key == 'schema_version':
+                        value = '1'  # Force to 1
+                    elif key == 'app_version':
+                        value = '1.0'  # Force to 1.0
+                    
+                    # Convert created_at date format
+                    if key == 'created_at':
+                        value = convert_date_to_utc(value)
+                    
+                    try:
+                        target_conn.execute('''
+                            INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)
+                        ''', (key, value))
+                        self.logger.info(f"Migrated meta entry: {key} = {value}")
+                        
+                    except Exception as e:
+                        error_msg = f"Failed to migrate meta key {key}: {e}"
+                        errors.append(error_msg)
+                        self.logger.error(error_msg)
+                
+                else:
+                    # Handle missing entries based on configuration
+                    if config.get('create_if_missing', False):
+                        value = config['value']
+                        
+                        # Handle dynamic values
+                        if config.get('dynamic', False) and value == 'CURRENT_UTC_ISO8601':
+                            value = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                        
+                        try:
+                            target_conn.execute('''
+                                INSERT OR IGNORE INTO meta (key, value) VALUES (?, ?)
+                            ''', (key, value))
+                            self.logger.info(f"Created missing meta entry: {key} = {value}")
+                            
+                        except Exception as e:
+                            error_msg = f"Failed to create meta key {key}: {e}"
+                            errors.append(error_msg)
+                            self.logger.error(error_msg)
+            
+            # Always update migration_date (overwrite existing)
+            migration_date = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            try:
+                target_conn.execute('''
+                    INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)
+                ''', ('migration_date', migration_date))
+                self.logger.info(f"Updated migration_date: {migration_date}")
+                
+            except Exception as e:
+                error_msg = f"Failed to update migration_date: {e}"
+                errors.append(error_msg)
+                self.logger.error(error_msg)
             
             target_conn.commit()
             
