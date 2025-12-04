@@ -114,6 +114,17 @@ class ReportGenerator:
             
             f.write("\n")
             
+            # Asset Migration Summary
+            f.write("## Asset Migration Summary\n\n")
+            if self.migration_stats and 'asset_info' in self.migration_stats:
+                asset_info = self.migration_stats['asset_info']
+                f.write(f"- Characters: {asset_info.get('characters', 0)} files\n")
+                f.write(f"- Locations: {asset_info.get('locations', 0)} files\n")
+                f.write(f"- Other assets: {asset_info.get('other', 0)} files\n")
+                f.write(f"- Total assets migrated: {asset_info.get('total', 0)}\n\n")
+            else:
+                f.write("- Asset migration details not available\n\n")
+            
             # Next Steps
             f.write("## Next Steps\n\n")
             f.write("1. Open the migrated project in AIMMS 1.0\n")
@@ -139,9 +150,7 @@ class ReportGenerator:
             
             # Migration Details
             f.write("## Migration Details\n\n")
-            f.write(f"- Migration Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-            f.write(f"- Python Version: {__import__('sys').version_info.major}.{__import__('sys').version_info.minor}.{__import__('sys').version_info.micro}\n")
-            f.write(f"- SQLite Version: {__import__('sqlite3').sqlite_version}\n\n")
+            f.write(f"- Migration Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
             
             # Database Changes
             f.write("## Database Changes\n\n")
@@ -166,6 +175,17 @@ class ReportGenerator:
             f.write("- Media folders renamed from shot_name to shot_id\n")
             f.write("- File paths updated in takes table\n")
             f.write("- Maintained relative path structure\n\n")
+            
+            # Asset Migration
+            f.write("## Asset Migration\n\n")
+            if self.migration_stats and 'asset_info' in self.migration_stats:
+                asset_info = self.migration_stats['asset_info']
+                f.write(f"- Characters migrated: {asset_info.get('characters', 0)} files\n")
+                f.write(f"- Locations migrated: {asset_info.get('locations', 0)} files\n")
+                f.write(f"- Other assets migrated: {asset_info.get('other', 0)} files\n")
+                f.write(f"- Total asset files: {asset_info.get('total', 0)}\n\n")
+            else:
+                f.write("- Asset migration details not available\n\n")
             
             # Migration Phases
             f.write("## Migration Phases\n\n")
@@ -243,6 +263,10 @@ class ReportGenerator:
                 "start_time": serialize_datetime(self.migration_stats.get('start_time')) if self.migration_stats.get('start_time') else None,
                 "end_time": serialize_datetime(self.migration_stats.get('end_time')) if self.migration_stats.get('end_time') else None
             }
+            
+            # Add asset migration information
+            if 'asset_info' in self.migration_stats:
+                report_data["asset_migration"] = self.migration_stats['asset_info']
         
         with open(report_path, 'w', encoding='utf-8') as f:
             json.dump(report_data, f, indent=2, ensure_ascii=False, default=serialize_datetime)

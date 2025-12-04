@@ -235,8 +235,9 @@ class Validator:
                 folder_path = os.path.join(self.media_path, folder)
                 
                 # Skip asset folders - they don't need to correspond to shot_ids
+                # Asset folders (characters, locations, other) are validated separately
                 if folder in asset_subdirs:
-                    self.logger.debug(f"Skipping validation for asset folder: {folder}")
+                    self.logger.info(f"Asset folder '{folder}' - validated separately (contains 3D models/textures)")
                     validated_folders += 1
                     continue
                 

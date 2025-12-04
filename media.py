@@ -322,7 +322,6 @@ class MediaMigrator:
             thumbnail_files = [f for f in files if f.startswith('video_') and f.endswith('.png')]
             image_files = [f for f in files if f.startswith('image_')]
             base_image_files = [f for f in files if f.startswith('base_') and f.endswith('.png')]
-            asset_files = [f for f in files if f.startswith('asset_')]
             
             # Build context message
             context_msg = f" (Shot: {shot_name} → Folder: {folder_name})" if shot_name else f" (Folder: {folder_name})"
@@ -394,8 +393,7 @@ class MediaMigrator:
                             f"{len(video_files)} videos, "
                             f"{len(thumbnail_files)} thumbnails, "
                             f"{len(image_files)} images, "
-                            f"{len(base_image_files)} base_images, "
-                            f"{len(asset_files)} assets")
+                            f"{len(base_image_files)} base_images")
             
             success = len(errors) == 0
             return MediaResult(success=success, errors=errors, warnings=warnings)
@@ -426,7 +424,7 @@ class MediaMigrator:
                     'video_files': 0,
                     'thumbnail_files': 0,
                     'image_files': 0,
-                    'asset_files': 0
+                    'base_image_files': 0
                 }
             }
             
@@ -451,7 +449,6 @@ class MediaMigrator:
                 media_info['summary']['thumbnail_files'] += folder_info['thumbnail_count']
                 media_info['summary']['image_files'] += folder_info['image_count']
                 media_info['summary']['base_image_files'] += folder_info['base_image_count']
-                media_info['summary']['asset_files'] += folder_info['asset_count']
             
             return media_info
             
@@ -469,7 +466,6 @@ class MediaMigrator:
             'thumbnail_count': 0,
             'image_count': 0,
             'base_image_count': 0,
-            'asset_count': 0,
             'files': []
         }
         
@@ -497,8 +493,6 @@ class MediaMigrator:
                     folder_info['image_count'] += 1
                 elif file_type == 'base_image':
                     folder_info['base_image_count'] += 1
-                elif file_type == 'asset':
-                    folder_info['asset_count'] += 1
                 
                 folder_info['files'].append({
                     'name': file_name,

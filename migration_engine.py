@@ -263,12 +263,15 @@ class MigrationEngine:
             # Execute media migration
             success = media_migrator.migrate()
             
+            # Get asset migration information
+            asset_info = self._get_asset_migration_info(media_migrator)
+            
             duration = (datetime.now() - start_time).total_seconds()
             
             if success:
                 phase_logger.end_operation(
-                    "Media Migration Phase", 
-                    True, 
+                    "Media Migration Phase",
+                    True,
                     f"Duration: {duration:.2f} seconds"
                 )
                 
@@ -277,14 +280,18 @@ class MigrationEngine:
                     'status': 'SUCCESS',
                     'duration': duration,
                     'start_time': start_time,
-                    'end_time': datetime.now()
+                    'end_time': datetime.now(),
+                    'asset_info': asset_info
                 })
+                
+                # Store asset info in migration stats
+                self.migration_stats['asset_info'] = asset_info
                 
                 return True
             else:
                 phase_logger.end_operation(
-                    "Media Migration Phase", 
-                    False, 
+                    "Media Migration Phase",
+                    False,
                     f"Duration: {duration:.2f} seconds"
                 )
                 
@@ -293,8 +300,12 @@ class MigrationEngine:
                     'status': 'FAILED',
                     'duration': duration,
                     'start_time': start_time,
-                    'end_time': datetime.now()
+                    'end_time': datetime.now(),
+                    'asset_info': asset_info
                 })
+                
+                # Store asset info even on failure
+                self.migration_stats['asset_info'] = asset_info
                 
                 return False
             
@@ -313,6 +324,42 @@ class MigrationEngine:
             
             self.migration_stats['errors'].append(f"Media migration failed: {e}")
             return False
+    
+    def _get_asset_migration_info(self, media_migrator: MediaMigrator) -> Dict:
+        """Get asset migration information."""
+        try:
+            # Get media info from the migrator
+            media_info = media_migrator.get_media_info()
+            
+            asset_info = {
+                'characters': 0,
+                'locations': 0,
+                'other': 0,
+                'total': 0
+            }
+            
+            # Count files in asset directories
+            if 'folders' in media_info:
+                for folder_name, folder_data in media_info['folders'].items():
+                    if folder_name == 'characters':
+                        asset_info['characters'] = folder_data.get('file_count', 0)
+                    elif folder_name == 'locations':
+                        asset_info['locations'] = folder_data.get('file_count', 0)
+                    elif folder_name == 'other':
+                        asset_info['other'] = folder_data.get('file_count', 0)
+            
+            asset_info['total'] = asset_info['characters'] + asset_info['locations'] + asset_info['other']
+            
+            return asset_info
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to get asset migration info: {e}")
+            return {
+                'characters': 0,
+                'locations': 0,
+                'other': 0,
+                'total': 0
+            }
     
     def _validate_migration(self) -> bool:
         """Validate migration completeness and correctness."""
