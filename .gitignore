@@ -5,6 +5,7 @@
 
 # Ignore dev folder entirely
 /dev/
+/docs/
 
 # Ignore these files
 AGENT.md

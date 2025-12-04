@@ -1,0 +1,32 @@
+# AIMMS Migration Tool - Python Dependencies
+
+# Core dependencies (built-in Python modules)
+# Note: Most dependencies are built-in Python modules
+# sqlite3 - Built-in SQLite3 module
+# os - Built-in operating system interface
+# shutil - Built-in high-level file operations
+# logging - Built-in logging facility
+# argparse - Built-in command-line argument parsing
+# datetime - Built-in date/time handling
+# uuid - Built-in UUID generation
+# pathlib - Built-in object-oriented filesystem paths
+# typing - Built-in type hints support
+
+# Optional dependencies for enhanced functionality
+# (These can be added later if needed for specific features)
+
+# Development and testing dependencies
+pytest>=7.0.0            # Testing framework
+pytest-cov>=4.0.0        # Coverage reporting for pytest
+black>=22.0.0            # Code formatting
+flake8>=5.0.0            # Linting
+mypy>=0.991              # Type checking
+
+# Documentation dependencies
+sphinx>=5.0.0            # Documentation generation
+sphinx-rtd-theme>=1.0.0  # Documentation theme
+
+# Installation note:
+# This project primarily uses Python built-in libraries.
+# No external dependencies are required for basic functionality.
+# Optional dependencies are listed for development, testing, and documentation.
