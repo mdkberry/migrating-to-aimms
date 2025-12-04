@@ -4,10 +4,11 @@ AIMMS Migration Tool - Main Entry Point
 
 Command-line interface for the AIMMS migration tool.
 Usage:
+  python main.py --mode option1 --source old_project --project-name project_The_Highwayman
   python main.py --mode option1 --source old_project --target transfer_folder
-  python main.py --mode option2 --csv data.csv --target new_project
-  python main.py --mode option3 --restore backup.aimms --target recovered_project
-  python main.py --mode option4 --source media_folder --target new_project
+  python main.py --mode option2 --csv data.csv --project-name project_MyProject
+  python main.py --mode option3 --restore backup.aimms --project-name project_Recovered
+  python main.py --mode option4 --source media_folder --project-name project_MediaImport
 """
 
 import argparse
@@ -25,10 +26,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  python main.py --mode option1 --source old_project --project-name project_The_Highwayman
   python main.py --mode option1 --source old_project --target transfer_folder
-  python main.py --mode option2 --csv data.csv --target new_project
-  python main.py --mode option3 --restore backup.aimms --target recovered_project
-  python main.py --mode option4 --source media_folder --target new_project
+  python main.py --mode option2 --csv data.csv --project-name project_MyProject
+  python main.py --mode option3 --restore backup.aimms --project-name project_Recovered
+  python main.py --mode option4 --source media_folder --project-name project_MediaImport
         """
     )
     
@@ -46,8 +48,7 @@ Examples:
     
     parser.add_argument(
         '--target',
-        required=True,
-        help='Target project directory'
+        help='Target project directory (alternative to --project-name)'
     )
     
     parser.add_argument(
@@ -58,6 +59,11 @@ Examples:
     parser.add_argument(
         '--restore',
         help='Restore file for option3'
+    )
+    
+    parser.add_argument(
+        '--project-name',
+        help='Project name for target folder (e.g., project_The_Highwayman)'
     )
     
     parser.add_argument(
@@ -74,11 +80,23 @@ Examples:
     
     args = parser.parse_args()
     
+    # Determine target path based on project name or use provided target
+    if args.project_name:
+        target_path = args.project_name
+        print(f"Using project name as target: {target_path}")
+    elif args.target:
+        target_path = args.target
+        print(f"Using provided target path: {target_path}")
+    else:
+        # Default to transfer_folder if neither is provided
+        target_path = "transfer_folder"
+        print(f"No target specified, using default: {target_path}")
+    
     # Setup logging with automatic log file
     log_file = None
-    if args.target:
+    if target_path:
         # Create log file in target directory
-        log_file = os.path.join(args.target, 'migration.log')
+        log_file = os.path.join(target_path, 'migration.log')
     
     setup_logging(verbose=args.verbose, log_file=log_file)
     logger = logging.getLogger(__name__)
@@ -92,7 +110,7 @@ Examples:
         config = MigrationConfig(
             mode=args.mode,
             source_path=args.source,
-            target_path=args.target,
+            target_path=target_path,
             csv_path=args.csv,
             restore_path=args.restore,
             create_backup=args.backup

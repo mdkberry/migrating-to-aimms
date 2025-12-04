@@ -2,6 +2,7 @@
 /current_project/
 /old_project/
 /transfer_folder/
+__pycache__
 
 # Ignore dev folder entirely
 /dev/
