@@ -552,6 +552,12 @@ class DatabaseMigrator:
                             video_name = item.replace('.png', '.mp4')
                             file_path = os.path.join(media_folder, item)
                             
+                            # Create relative path for database storage
+                            # Convert: C:\...\media\1\video_01.png -> /media/1/video_01.png
+                            relative_path = os.path.join('media', str(shot_id), item)
+                            # Ensure forward slashes for database storage
+                            db_file_path = relative_path.replace('\\', '/')
+                            
                             # Check if corresponding video exists
                             video_path = os.path.join(media_folder, video_name)
                             if not os.path.exists(video_path):
@@ -562,7 +568,7 @@ class DatabaseMigrator:
                             cursor = conn.execute('''
                                 SELECT COUNT(*) FROM takes
                                 WHERE shot_id = ? AND file_path = ? AND take_type = 'video_workflow'
-                            ''', (shot_id, file_path))
+                            ''', (shot_id, db_file_path))
                             
                             if cursor.fetchone()[0] == 0:
                                 # Create video_workflow entry
@@ -573,7 +579,7 @@ class DatabaseMigrator:
                                     INSERT INTO takes (
                                         take_id, shot_id, take_type, file_path, starred, created_date
                                     ) VALUES (?, ?, ?, ?, ?, ?)
-                                ''', (take_id, shot_id, 'video_workflow', file_path, 0, created_date))
+                                ''', (take_id, shot_id, 'video_workflow', db_file_path, 0, created_date))
                                 
                                 self.logger.info(f"Created video_workflow entry for {item} in shot {shot_name}")
                 
