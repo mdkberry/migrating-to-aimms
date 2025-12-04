@@ -2,7 +2,8 @@
 /current_project/
 /old_project/
 /transfer_folder/
-__pycache__
+/project_*/
+/project_The_Highwayman/
 
 # Ignore dev folder entirely
 /dev/
@@ -10,3 +11,28 @@ __pycache__
 
 # Ignore these files
 AGENT.md
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+
+# IDE/editor configs
+.vscode/
+.idea/
+
+# OS-specific junk
+.DS_Store
+Thumbs.db
+
+# Build/compiled outputs
+*.log
+*.sqlite3
+dist/
+build/
