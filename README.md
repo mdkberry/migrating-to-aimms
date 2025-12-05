@@ -4,7 +4,7 @@
 
 ## Roadmap
 
-- integrity test as seperate app, for after successful migration
+- integrity test as seperate app, for after successful migration ✅
 
 - GUI based web interface
 
@@ -130,6 +130,36 @@ The migration tool supports two ways to specify the output location:
 | `--help` | Show help message | No |
 
 
+## Integrity Test
+
+After migration, run the integrity test to validate the migrated project:
+
+```bash
+# Basic integrity test
+python integrity_test.py project_folder_path
+
+# With verbose output
+python integrity_test.py project_folder_path --verbose
+```
+
+### Output
+
+- **Console**: Test progress and summary
+- **Report**: Detailed markdown report saved to `integrity_reports/integrity_report_{project_name}_{timestamp}.md`
+- **Log**: Detailed logs saved to project folder when using `--verbose` flag
+
+### Validation Checks
+
+- ✅ Project structure and required files
+- ✅ Database schema against [`schema/aimms-shot-db-schema.json`](schema/aimms-shot-db-schema.json)
+- ✅ Database content and data integrity
+- ✅ Meta table entries (author, project_name, description, etc.)
+- ✅ Media files and naming conventions
+- ✅ Cross-consistency between database and files
+- ⚠️  Asset subdirectories (characters, locations, other)
+- ⚠️  Zero-size placeholder files
+- ⚠️  Orphaned files and references
+
 ## AIMMS Project Structure
 
 The migration tool creates a valid AIMMS version 1.0 project structure:
@@ -215,7 +245,8 @@ AIMMS_Migration_Tool/
 ├── 📁 transfer_folder/        # 📂 Migration workspace
 │   └── use-this-folder-as-migration-folder-or-name-your-own
 ├── 📁 schema/                 # 🗃️  Database schema definitions
-│   └── aimms-shot-db-schema.json  # Database schema for version control
+│   ├── aimms-shot-db-schema.json  # Database schema for version control
+│   └── aimms-meta-entries.json    # Meta table entries configuration
 ├── 📄 main.py                 # 🚀 CLI entry point
 ├── 📄 migration_engine.py     # ⚙️  Migration orchestrator
 ├── 📄 config.py               # ⚙️  Configuration management
@@ -223,6 +254,7 @@ AIMMS_Migration_Tool/
 ├── 📄 schema_manager.py       # 🗃️  Schema management module
 ├── 📄 media.py                # 📁 Media file migration
 ├── 📄 validation.py           # ✅ Validation engine
+├── 📄 integrity_test.py       # 🔍 Standalone integrity test tool
 ├── 📄 reporting.py            # 📊 Report generation
 ├── 📄 logger.py               # 📝 Logging configuration
 ├── 📄 utils.py                # 🔧 Utility functions

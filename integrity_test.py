@@ -346,6 +346,29 @@ class IntegrityTester:
                 if meta_data.get('app_version') != '1.0':
                     warnings.append(f"Unexpected app_version: {meta_data.get('app_version')}")
                 
+                # Check for required meta entries from schema
+                if not self.schema_manager.meta_entries_data:
+                    if not self.schema_manager.load_meta_entries():
+                        warnings.append("Failed to load meta entries schema for validation")
+                    else:
+                        # Check for missing meta entries
+                        meta_entries_config = self.schema_manager.meta_entries_data['meta_entries']
+                        
+                        for key, config in meta_entries_config.items():
+                            if config.get('create_if_missing', False) and key not in meta_data:
+                                errors.append(f"Missing required meta entry: {key}")
+                            elif key in meta_data:
+                                # Validate existing entries have proper values (not default placeholders)
+                                value = meta_data[key]
+                                if key in ['author', 'project_name', 'description']:
+                                    placeholder_values = [
+                                        'your name here',
+                                        'your project name here',
+                                        'add project description here'
+                                    ]
+                                    if value in placeholder_values:
+                                        warnings.append(f"Meta entry '{key}' contains placeholder value: '{value}'")
+                
                 # Check date formats
                 cursor = conn.execute("SELECT created_date FROM shots LIMIT 10")
                 date_samples = [row[0] for row in cursor.fetchall()]
