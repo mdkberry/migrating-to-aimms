@@ -953,16 +953,15 @@ class DatabaseMigrator:
                     for item in os.listdir(media_folder):
                         if item.startswith('video_') and item.endswith('.png'):
                             video_name = item.replace('.png', '.mp4')
-                            file_path = os.path.join(media_folder, item)
+                            
+                            # Create full file path for existence check
+                            full_file_path = os.path.join(media_folder, item)
                             
                             # Create relative path for database storage
-                            # Convert: C:\...\media\1\video_01.png -> /media/1/video_01.png
+                            # Convert: media/1/video_01.png (relative to project root)
                             relative_path = os.path.join('media', str(shot_id), item)
                             # Ensure forward slashes for database storage
                             db_file_path = relative_path.replace('\\', '/')
-                            
-                            # Extract relative path from full file path (in case it was full path)
-                            db_file_path = self._extract_relative_path(db_file_path)
                             
                             # Check if corresponding video exists
                             video_path = os.path.join(media_folder, video_name)
@@ -1012,11 +1011,12 @@ class DatabaseMigrator:
             normalized_path = file_path.replace('\\', '/')
             
             # Find the 'media' directory in the path
-            media_index = normalized_path.lower().find('/media/')
+            # Look for both 'media/' and '/media/' patterns
+            media_index = normalized_path.lower().find('media/')
             
             if media_index != -1:
                 # Extract path from 'media' onwards
-                relative_path = normalized_path[media_index + 1:]  # Remove leading '/'
+                relative_path = normalized_path[media_index:]  # Keep 'media/' prefix
                 return relative_path
             else:
                 # If 'media' not found, log error and return original path
