@@ -4,6 +4,10 @@
 
 ## Roadmap
 
+- additional migration modes:
+   - Restore from .aimms backup file
+   - Import non-AIMMS media files to new AIMMS project
+
 - GUI based web interface
 
 ## Description
