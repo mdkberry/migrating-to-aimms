@@ -173,6 +173,11 @@ class DatabaseMigrator:
                 # Validate table schemas and log schema mismatches
                 self._validate_table_schemas(conn)
                 
+                # Adapt source schema to match target schema
+                if not self._adapt_source_schema(conn):
+                    self.logger.error("Source schema adaptation failed")
+                    return False
+                
                 self.logger.info("Source database validation passed")
                 return True
                 
@@ -221,18 +226,18 @@ class DatabaseMigrator:
             # Find additional columns in source (not in target)
             additional_columns = source_columns - target_columns
             if additional_columns:
-                self.logger.error(f"Table '{table_name}' has additional columns not in target schema: {', '.join(additional_columns)}")
-                self.logger.error(f"ERROR: Additional columns in {table_name} table will be ignored during migration")
+                self.logger.info(f"Table '{table_name}' has additional columns not in target schema: {', '.join(additional_columns)}")
+                self.logger.info(f"INFO: Additional columns in {table_name} table will be automatically removed during schema adaptation")
             
             # Find missing columns in source (in target but not in source)
             missing_columns = target_columns - source_columns
             if missing_columns:
-                self.logger.error(f"Table '{table_name}' is missing required columns from target schema: {', '.join(missing_columns)}")
-                self.logger.error(f"ERROR: Missing columns in {table_name} table will cause migration issues")
+                self.logger.info(f"Table '{table_name}' is missing required columns from target schema: {', '.join(missing_columns)}")
+                self.logger.info(f"INFO: Missing columns in {table_name} table will be automatically added during schema adaptation")
             
             # Log summary
             if additional_columns or missing_columns:
-                self.logger.error(f"Schema mismatch detected in '{table_name}' table")
+                self.logger.info(f"Schema adaptation required for '{table_name}' table")
             else:
                 self.logger.info(f"Schema validation passed for '{table_name}' table")
                 
@@ -262,6 +267,214 @@ class DatabaseMigrator:
         except Exception as e:
             self.logger.error(f"Failed to get target columns for table '{table_name}': {e}")
             return set()
+    
+    def _adapt_source_schema(self, conn) -> bool:
+        """
+        Adapt source database schema to match target schema.
+        Drops additional columns and adds missing columns.
+        Preserves existing shot_name and shot_id handling.
+        
+        Args:
+            conn: SQLite connection to source database
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            self.logger.info("Adapting source database schema to match target schema")
+            
+            # Get all tables that need adaptation
+            tables_to_adapt = ['shots', 'takes', 'assets']
+            
+            for table_name in tables_to_adapt:
+                if not self._adapt_table_schema(conn, table_name):
+                    self.logger.error(f"Failed to adapt schema for table: {table_name}")
+                    return False
+            
+            self.logger.info("Source database schema adaptation completed successfully")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Schema adaptation failed: {e}")
+            return False
+    
+    def _adapt_table_schema(self, conn, table_name: str) -> bool:
+        """
+        Adapt a specific table schema to match target schema.
+        
+        Args:
+            conn: SQLite connection
+            table_name: Name of the table to adapt
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Get current table columns
+            cursor = conn.execute(f"PRAGMA table_info({table_name})")
+            current_columns = {row[1] for row in cursor.fetchall()}
+            
+            # Get target table columns
+            target_columns = self._get_target_table_columns(table_name)
+            
+            if not target_columns:
+                self.logger.warning(f"Target schema not found for table: {table_name}")
+                return True  # Skip adaptation if no target schema
+            
+            # Find columns to drop (additional columns not in target)
+            columns_to_drop = current_columns - target_columns
+            
+            # Find columns to add (missing from current but in target)
+            columns_to_add = target_columns - current_columns
+            
+            # Always exclude shot_name and shot_id from any modifications
+            protected_columns = {'shot_name', 'shot_id'}
+            columns_to_drop = columns_to_drop - protected_columns
+            columns_to_add = columns_to_add - protected_columns
+            
+            # Drop additional columns
+            if columns_to_drop:
+                self.logger.info(f"Dropping additional columns from {table_name}: {', '.join(columns_to_drop)}")
+                if not self._drop_columns(conn, table_name, columns_to_drop):
+                    return False
+            
+            # Add missing columns
+            if columns_to_add:
+                self.logger.info(f"Adding missing columns to {table_name}: {', '.join(columns_to_add)}")
+                if not self._add_columns(conn, table_name, columns_to_add):
+                    return False
+            
+            if not columns_to_drop and not columns_to_add:
+                self.logger.info(f"Table {table_name} schema already matches target")
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to adapt schema for table {table_name}: {e}")
+            return False
+    
+    def _drop_columns(self, conn, table_name: str, columns_to_drop: set) -> bool:
+        """
+        Drop specified columns from a table.
+        
+        Args:
+            conn: SQLite connection
+            table_name: Name of the table
+            columns_to_drop: Set of column names to drop
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # SQLite doesn't support DROP COLUMN directly, so we need to:
+            # 1. Create a new table with the desired schema
+            # 2. Copy data from old table to new table (excluding dropped columns)
+            # 3. Drop the old table
+            # 4. Rename the new table
+            
+            # Get current table info
+            cursor = conn.execute(f"PRAGMA table_info({table_name})")
+            current_columns_info = cursor.fetchall()
+            
+            # Filter out columns to drop
+            remaining_columns = [
+                col[1] for col in current_columns_info
+                if col[1] not in columns_to_drop
+            ]
+            
+            # Get target table schema for CREATE statement
+            target_columns_data = self.schema_manager.schema_data['tables'].get(f"{table_name}_columns", [])
+            target_columns_dict = {col['name']: col for col in target_columns_data}
+            
+            # Build CREATE statement with remaining columns
+            create_columns = []
+            for col_name in remaining_columns:
+                if col_name in target_columns_dict:
+                    col_info = target_columns_dict[col_name]
+                    col_def = f"{col_name} {col_info['type']}"
+                    if col_info.get('notnull', False):
+                        col_def += " NOT NULL"
+                    if col_info.get('default_value') is not None:
+                        default_val = col_info['default_value']
+                        if default_val is None:
+                            col_def += " DEFAULT NULL"
+                        elif isinstance(default_val, str) and default_val.startswith('strftime'):
+                            col_def += f" DEFAULT ({default_val})"
+                        else:
+                            col_def += f" DEFAULT {default_val}"
+                    create_columns.append(col_def)
+                else:
+                    # For columns not in target schema, use TEXT type
+                    create_columns.append(f"{col_name} TEXT")
+            
+            create_sql = f"CREATE TABLE {table_name}_new ({', '.join(create_columns)})"
+            
+            # Create new table
+            conn.execute(create_sql)
+            
+            # Copy data
+            if remaining_columns:
+                columns_str = ', '.join(remaining_columns)
+                conn.execute(f"INSERT INTO {table_name}_new ({columns_str}) SELECT {columns_str} FROM {table_name}")
+            
+            # Drop old table and rename new table
+            conn.execute(f"DROP TABLE {table_name}")
+            conn.execute(f"ALTER TABLE {table_name}_new RENAME TO {table_name}")
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to drop columns from {table_name}: {e}")
+            return False
+    
+    def _add_columns(self, conn, table_name: str, columns_to_add: set) -> bool:
+        """
+        Add specified columns to a table.
+        
+        Args:
+            conn: SQLite connection
+            table_name: Name of the table
+            columns_to_add: Set of column names to add
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Get target table schema
+            target_columns_data = self.schema_manager.schema_data['tables'].get(f"{table_name}_columns", [])
+            target_columns_dict = {col['name']: col for col in target_columns_data}
+            
+            for col_name in columns_to_add:
+                if col_name in target_columns_dict:
+                    col_info = target_columns_dict[col_name]
+                    
+                    # For SQLite, we can't use non-constant defaults in ALTER TABLE
+                    # So we'll add the column without default and update rows afterward
+                    try:
+                        # Try to add the column with type only
+                        conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_info['type']}")
+                    except Exception as e:
+                        self.logger.error(f"Failed to add column {col_name} to {table_name}: {e}")
+                        return False
+                    
+                    # Update existing rows with appropriate values
+                    if col_name == 'created_date':
+                        # Set created_date to current timestamp for existing rows
+                        current_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+                        conn.execute(f"UPDATE {table_name} SET created_date = ? WHERE created_date IS NULL", (current_time,))
+                    elif col_info.get('default_value') is not None:
+                        # Set other default values
+                        default_val = col_info['default_value']
+                        if default_val is None:
+                            conn.execute(f"UPDATE {table_name} SET {col_name} = NULL WHERE {col_name} IS NULL")
+                        else:
+                            conn.execute(f"UPDATE {table_name} SET {col_name} = ? WHERE {col_name} IS NULL", (default_val,))
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to add columns to {table_name}: {e}")
+            return False
     
     def _create_assets_table(self, conn):
         """Create the assets table with correct schema."""
