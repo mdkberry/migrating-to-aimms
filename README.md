@@ -4,8 +4,6 @@
 
 ## Roadmap
 
-- integrity test as seperate app, for after successful migration ✅
-
 - GUI based web interface
 
 ## Description
@@ -18,6 +16,7 @@ A comprehensive Python-based tool for migrating AIMMS projects from older format
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Integrity Test](#integrity-test)
 - [Aimms Project Structure](#aimms-project-structure)
 - [Supporting Files](#supporting-files-required)
 - [Migration Tool Folder Structure](#migration-tool-folder-structure)
