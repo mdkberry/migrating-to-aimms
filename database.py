@@ -668,6 +668,12 @@ class DatabaseMigrator:
             for i, row in enumerate(takes_data):
                 shot_name, take_type, file_path, starred, created_date = row
                 
+                # Skip legacy take types
+                if take_type in ['mask_video', 'swapped_video']:
+                    warning_msg = f"Excluding legacy take_type '{take_type}' for shot {shot_name}"
+                    self.logger.warning(warning_msg)
+                    continue
+                
                 # Get shot_id from mapping
                 if shot_name not in self.shot_mapping:
                     error_msg = f"Shot name {shot_name} not found in mapping"

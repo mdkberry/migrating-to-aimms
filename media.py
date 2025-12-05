@@ -133,6 +133,13 @@ class MediaMigrator:
                 target_item = os.path.join(target_folder, item)
                 
                 if os.path.isfile(source_item):
+                    # Check if this is a legacy file that should be excluded
+                    file_name_lower = item.lower()
+                    if file_name_lower.startswith('video_mask_') or file_name_lower.startswith('video_swap_'):
+                        warning_msg = f"Excluding legacy file: {source_item}"
+                        self.logger.warning(warning_msg)
+                        continue  # Skip this file
+                    
                     # Validate file before copying
                     file_info = validate_media_file(source_item)
                     
