@@ -1,5 +1,15 @@
 # AIMMS Migration Tool
 
+***NOTE: this is currently a work in progress. It's recommended you do not download or fork it at this time until the launch of AIMMS Version 1.0 (Storm) Storyboard Management software in Q1 2026***
+
+## Roadmap
+
+- integrity test as seperate app, for after successful migration
+
+- GUI based web interface
+
+## Description
+
 A comprehensive Python-based tool for migrating AIMMS projects from older formats to AIMMS 1.0 with a new database schema and file structure.
 
 ## 📋 Table of Contents
