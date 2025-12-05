@@ -176,12 +176,11 @@ YourProjectName/
 │   ├── 📄 shot_name_mapping.json       # Shot name to ID mapping (data folder)
 │   ├── 📁 csv/                         # CSV import/export files
 │   ├── 📁 backup/                      # Database backup files
-│   └── 📁 saves/                       # Saved project files
+│   └── 📁 saves/                       # Saved .aimms recovery files
 ├── 📁 media/                           # Media files organized by shot_id
 │   ├── 1/                              # Shot ID 1
 │   │   ├── video_01.mp4
 │   │   ├── video_01.png
-│   │   ├── image_01.png
 │   │   └── base_01.png
 │   ├── 2/                              # Shot ID 2
 │   │   └── ...
@@ -250,6 +249,8 @@ AIMMS_Migration_Tool/
 ├── 📁 schema/                 # 🗃️  Database schema definitions
 │   ├── aimms-shot-db-schema.json  # Database schema for version control
 │   └── aimms-meta-entries.json    # Meta table entries configuration
+├── 📁 integrity_reports/      # 📊 Integrity test reports
+│   └── integrity-test-reports-saved-here
 ├── 📄 main.py                 # 🚀 CLI entry point
 ├── 📄 migration_engine.py     # ⚙️  Migration orchestrator
 ├── 📄 config.py               # ⚙️  Configuration management
@@ -286,13 +287,6 @@ The migration tool uses a schema file (`schema/aimms-shot-db-schema.json`) to ma
 
 ## Error Handling In Migration Logs
 
-### Error Categories
-
-1. **Configuration Errors**: Invalid paths, missing parameters
-2. **Database Errors**: Schema issues, data integrity problems
-3. **Media Errors**: Missing files, zero-size files, permission issues
-4. **System Errors**: Disk space, permissions, compatibility
-
 ### Log Files and Error Checking
 
 Logs are written to:
@@ -305,7 +299,9 @@ Logs are written to:
 
 Recommend using a simple text editor and search for "ERROR".
 
-**Migration is NOT complete until ALL errors are resolved!**
+**Migration will NOT complete until ALL errors are resolved!**
+
+e.g. `video_workflow` take_type entries in `takes` table of `shots.db` cannot be created until all ERROR messages are resolved. This will require fixing errors, then running the migration tool again (deleting the erroneous resulting files first). This approach is standard practice.
 
 #### **📋 ERROR vs WARNING - What to prioritize:**
 
@@ -334,14 +330,15 @@ Recommend using a simple text editor and search for "ERROR".
 - [ ] All critical files migrated successfully
 - [ ] Database validation passed
 - [ ] Media validation passed
-- [ ] Project loads successfully in AIMMS 1.0
+- [ ] Integrity test (standalone) passed
+- [ ] Project loads successfully in AIMMS 1.0 and tests working
 
 **⚠️ WARNING messages can typically be treated as reference information, but review them at your discretion based on your project requirements.**
 
 
 ## License
 
-*(AIMMS version 1.0 (Storm) Storyboard Management software application will be released as closed source software and will require a license to run.)*
+*(AIMMS version 1.0 (Storm) Storyboard Management software application will be released in Q1 2026 as closed source software and will require a license to run.)*
 
 This project is the AIMMS version 1.0 migration tool only. It is licensed under **GPL‑3.0**:
 
@@ -395,8 +392,8 @@ A: It is best to delete the failed migration folder and run the migration proces
 ## 🙏 Acknowledgments
 
 - AIMMS development team for the original project structure
-- Python community for excellent built-in libraries
 - Contributors and testers for feedback and improvements
+- [YT Channel](https://www.youtube.com/@markdkberry) subscribers for their ongoing support and encouragement to keep working on *AIMMS Version 1.0 (Storm) Storyboard Management software*
 
 ---
 
