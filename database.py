@@ -170,14 +170,8 @@ class DatabaseMigrator:
                     conn.commit()
                     self.logger.info(f"Created missing tables: {missing_tables}")
                 
-                # Check shots table structure
-                cursor = conn.execute("PRAGMA table_info(shots)")
-                shots_columns = {row[1] for row in cursor.fetchall()}
-                
-                required_shot_columns = {'shot_name', 'order_number'}
-                if not required_shot_columns.issubset(shots_columns):
-                    self.logger.error(f"Shots table missing required columns: {required_shot_columns - shots_columns}")
-                    return False
+                # Validate table schemas and log schema mismatches
+                self._validate_table_schemas(conn)
                 
                 self.logger.info("Source database validation passed")
                 return True
@@ -185,6 +179,89 @@ class DatabaseMigrator:
         except Exception as e:
             self.logger.error(f"Source database validation failed: {e}")
             return False
+    
+    def _validate_table_schemas(self, conn) -> None:
+        """
+        Validate source database table schemas against target schema.
+        Logs additional and missing columns as ERROR entries.
+        """
+        try:
+            # Load target schema if not already loaded
+            if not self.schema_manager.schema_data:
+                if not self.schema_manager.load_schema():
+                    self.logger.error("Failed to load target schema for validation")
+                    return
+            
+            # Validate each table
+            tables_to_validate = ['shots', 'takes', 'assets']
+            
+            for table_name in tables_to_validate:
+                self._validate_table_schema(conn, table_name)
+                
+        except Exception as e:
+            self.logger.error(f"Table schema validation failed: {e}")
+    
+    def _validate_table_schema(self, conn, table_name: str) -> None:
+        """
+        Validate a specific table schema against target schema.
+        Logs additional and missing columns as ERROR entries.
+        """
+        try:
+            # Get source table columns
+            cursor = conn.execute(f"PRAGMA table_info({table_name})")
+            source_columns = {row[1] for row in cursor.fetchall()}
+            
+            # Get target table columns from schema
+            target_columns = self._get_target_table_columns(table_name)
+            
+            if not target_columns:
+                self.logger.warning(f"Target schema not found for table: {table_name}")
+                return
+            
+            # Find additional columns in source (not in target)
+            additional_columns = source_columns - target_columns
+            if additional_columns:
+                self.logger.error(f"Table '{table_name}' has additional columns not in target schema: {', '.join(additional_columns)}")
+                self.logger.error(f"ERROR: Additional columns in {table_name} table will be ignored during migration")
+            
+            # Find missing columns in source (in target but not in source)
+            missing_columns = target_columns - source_columns
+            if missing_columns:
+                self.logger.error(f"Table '{table_name}' is missing required columns from target schema: {', '.join(missing_columns)}")
+                self.logger.error(f"ERROR: Missing columns in {table_name} table will cause migration issues")
+            
+            # Log summary
+            if additional_columns or missing_columns:
+                self.logger.error(f"Schema mismatch detected in '{table_name}' table")
+            else:
+                self.logger.info(f"Schema validation passed for '{table_name}' table")
+                
+        except Exception as e:
+            self.logger.error(f"Failed to validate schema for table '{table_name}': {e}")
+    
+    def _get_target_table_columns(self, table_name: str) -> set:
+        """
+        Get column names for a target table from schema.
+        
+        Args:
+            table_name: Name of the table
+            
+        Returns:
+            Set of column names
+        """
+        try:
+            # Get columns from schema
+            columns_key = f"{table_name}_columns"
+            columns_data = self.schema_manager.schema_data['tables'].get(columns_key, [])
+            
+            # Extract column names
+            column_names = {col['name'] for col in columns_data}
+            
+            return column_names
+            
+        except Exception as e:
+            self.logger.error(f"Failed to get target columns for table '{table_name}': {e}")
+            return set()
     
     def _create_assets_table(self, conn):
         """Create the assets table with correct schema."""
@@ -393,8 +470,11 @@ class DatabaseMigrator:
                 # Convert date format
                 converted_date = convert_date_to_utc(created_date)
                 
+                # Extract relative path from full file path
+                relative_file_path = self._extract_relative_path(file_path)
+                
                 # Update file_path to use shot_id
-                new_file_path = update_file_path(file_path, shot_id, shot_name)
+                new_file_path = update_file_path(relative_file_path, shot_id, shot_name)
                 
                 try:
                     # Insert into new table
@@ -457,6 +537,9 @@ class DatabaseMigrator:
             for i, row in enumerate(assets_data):
                 id_key, asset_name, asset_type, file_path, starred, created_date = row
                 
+                # Extract relative path from full file path
+                relative_file_path = self._extract_relative_path(file_path)
+                
                 # Convert date format
                 converted_date = convert_date_to_utc(created_date)
                 
@@ -466,7 +549,7 @@ class DatabaseMigrator:
                         INSERT INTO assets (
                             id_key, asset_name, asset_type, file_path, starred, created_date
                         ) VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (id_key, asset_name, asset_type, file_path, starred, converted_date))
+                    ''', (id_key, asset_name, asset_type, relative_file_path, starred, converted_date))
                     
                 except Exception as e:
                     error_msg = f"Failed to migrate asset {id_key}: {e}"
@@ -659,6 +742,9 @@ class DatabaseMigrator:
                             # Ensure forward slashes for database storage
                             db_file_path = relative_path.replace('\\', '/')
                             
+                            # Extract relative path from full file path (in case it was full path)
+                            db_file_path = self._extract_relative_path(db_file_path)
+                            
                             # Check if corresponding video exists
                             video_path = os.path.join(media_folder, video_name)
                             if not os.path.exists(video_path):
@@ -691,6 +777,36 @@ class DatabaseMigrator:
         except Exception as e:
             self.logger.error(f"Failed to create video workflow entries: {e}")
             return False
+    
+    def _extract_relative_path(self, file_path: str) -> str:
+        """
+        Extract relative path from full file path by finding 'media' directory.
+        
+        Args:
+            file_path: Full or relative file path
+            
+        Returns:
+            Relative path starting from 'media' directory, or original path if 'media' not found
+        """
+        try:
+            # Handle both forward and backward slashes
+            normalized_path = file_path.replace('\\', '/')
+            
+            # Find the 'media' directory in the path
+            media_index = normalized_path.lower().find('/media/')
+            
+            if media_index != -1:
+                # Extract path from 'media' onwards
+                relative_path = normalized_path[media_index + 1:]  # Remove leading '/'
+                return relative_path
+            else:
+                # If 'media' not found, log error and return original path
+                self.logger.error(f"ERROR: Could not find 'media' directory in file path: {file_path}")
+                return file_path
+                
+        except Exception as e:
+            self.logger.error(f"ERROR: Failed to extract relative path from {file_path}: {e}")
+            return file_path
     
     def get_database_info(self, db_path: Optional[str] = None) -> Optional[Dict]:
         """
