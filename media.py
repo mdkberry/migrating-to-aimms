@@ -202,7 +202,7 @@ class MediaMigrator:
                 target_subdir = os.path.join(self.target_media_path, subdir)
                 
                 if os.path.exists(source_subdir):
-                    # Copy the entire subdirectory
+                    # Copy the entire subdirectory from source to target
                     if safe_copy_directory(source_subdir, target_subdir):
                         # Count files in copied directory
                         file_count = 0
@@ -215,9 +215,20 @@ class MediaMigrator:
                         errors.append(error_msg)
                         self.logger.error(error_msg)
                 else:
+                    # Source subdirectory doesn't exist, but we still need to create the target folder
+                    # as part of the new schema structure
                     warning_msg = f"Asset subdirectory not found: {source_subdir}"
                     warnings.append(warning_msg)
                     self.logger.warning(warning_msg)
+                    
+                    # Create the target asset folder anyway as part of new schema structure
+                    try:
+                        os.makedirs(target_subdir, exist_ok=True)
+                        self.logger.info(f"Created empty {subdir} folder in target as part of new schema structure")
+                    except Exception as e:
+                        error_msg = f"Failed to create {subdir} folder in target: {e}"
+                        errors.append(error_msg)
+                        self.logger.error(error_msg)
             
             # Log results
             if errors:
