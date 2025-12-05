@@ -4,6 +4,7 @@
 # /transfer_folder/
 /project_*/
 /project_The_Highwayman/
+/aimms_import/
 
 # Ignore dev folder entirely
 /dev/

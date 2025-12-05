@@ -20,6 +20,7 @@ A comprehensive Python-based tool for migrating AIMMS projects from older format
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Utility Scripts](#utility-scripts)
 - [Integrity Test](#integrity-test)
 - [Aimms Project Structure](#aimms-project-structure)
 - [Supporting Files](#supporting-files-required)
@@ -132,6 +133,18 @@ The migration tool supports two ways to specify the output location:
 | `--verbose` | Enable verbose logging | No |
 | `--help` | Show help message | No |
 
+
+## Utility Scripts
+
+### Create Shot Subfolders
+
+A utility script for creating shot subfolders from a CSV file:
+
+```bash
+python create-shot-subfolders.py csv-file-location target-folder
+```
+
+This script reads shot names from a CSV file and creates corresponding subfolders in the target directory. Useful for organizing media files or preparing project structures.
 
 ## Integrity Test
 
