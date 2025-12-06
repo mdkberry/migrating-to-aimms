@@ -38,11 +38,19 @@ class MigrationConfig:
         self._validate_mode(mode)
         self.mode = mode
         
-        # Set paths
-        self.source_path = self._validate_path(source_path, required=self.mode != 'option2')
-        self.target_path = self._validate_path(target_path, required=True)
-        self.csv_path = self._validate_path(csv_path, required=self.mode == 'option2')
-        self.restore_path = self._validate_path(restore_path, required=self.mode == 'option3')
+        # Set paths with different requirements for each mode
+        if mode == 'option4':
+            # Option 4: source is required (aimms_import folder), target is required
+            self.source_path = self._validate_path(source_path, required=True)
+            self.target_path = self._validate_path(target_path, required=True)
+            self.csv_path = None  # Not used in option4
+            self.restore_path = None  # Not used in option4
+        else:
+            # Other modes: use original logic
+            self.source_path = self._validate_path(source_path, required=self.mode != 'option2')
+            self.target_path = self._validate_path(target_path, required=True)
+            self.csv_path = self._validate_path(csv_path, required=self.mode == 'option2')
+            self.restore_path = self._validate_path(restore_path, required=self.mode == 'option3')
         
         self.create_backup = create_backup
         
@@ -122,6 +130,30 @@ class MigrationConfig:
             
             if not os.path.exists(self.restore_path):
                 raise FileNotFoundError(f"Restore file not found: {self.restore_path}")
+    
+    def validate_source_exists(self):
+        """Validate that source path exists (with mode-specific logic)."""
+        if self.mode == 'option4':
+            # For option4, validate aimms_import structure
+            if not self.source_path:
+                raise ValueError("Source path is required for option4")
+            
+            if not os.path.exists(self.source_path):
+                raise FileNotFoundError(f"Source path does not exist: {self.source_path}")
+            
+            # Check for required subdirectories
+            image_storyboard = os.path.join(self.source_path, 'image_storyboard')
+            video_storyboard = os.path.join(self.source_path, 'video_storyboard')
+            
+            if not os.path.exists(image_storyboard):
+                self.logger.warning(f"image_storyboard directory not found: {image_storyboard}")
+            
+            if not os.path.exists(video_storyboard):
+                self.logger.warning(f"video_storyboard directory not found: {video_storyboard}")
+        else:
+            # For other modes, use original logic
+            if self.source_path and not os.path.exists(self.source_path):
+                raise FileNotFoundError(f"Source path does not exist: {self.source_path}")
     
     def get_source_db_path(self) -> Optional[str]:
         """Get path to source database file."""

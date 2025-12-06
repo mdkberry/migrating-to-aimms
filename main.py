@@ -8,7 +8,7 @@ Usage:
   python main.py --mode option1 --source old_project --target transfer_folder
   python main.py --mode option2 --csv data.csv --project-name project_MyProject
   python main.py --mode option3 --restore backup.aimms --project-name project_Recovered
-  python main.py --mode option4 --source media_folder --project-name project_MediaImport
+  python main.py --mode option4 --source aimms_import --project-name project_MediaImport
 """
 
 import argparse
@@ -35,7 +35,7 @@ Examples:
     )
     
     parser.add_argument(
-        '--mode', 
+        '--mode',
         choices=['option1', 'option2', 'option3', 'option4'],
         required=True,
         help='Migration mode to use'
@@ -43,7 +43,7 @@ Examples:
     
     parser.add_argument(
         '--source',
-        help='Source project directory'
+        help='Source project directory (required for option1 and option4)'
     )
     
     parser.add_argument(
@@ -63,13 +63,13 @@ Examples:
     
     parser.add_argument(
         '--project-name',
-        help='Project name for target folder (e.g., project_The_Highwayman)'
+        help='Project name for target folder (e.g., project_The_Highwayman). For option4, this will be used as the project folder name.'
     )
     
     parser.add_argument(
         '--backup',
         action='store_true',
-        help='Create backup before migration'
+        help='Create backup before migration (not used in option4)'
     )
     
     parser.add_argument(
@@ -91,6 +91,13 @@ Examples:
         # Default to transfer_folder if neither is provided
         target_path = "transfer_folder"
         print(f"No target specified, using default: {target_path}")
+    
+    # Mode-specific validation
+    if args.mode == 'option4':
+        if not args.source:
+            print("ERROR: --source is required for option4")
+            sys.exit(1)
+        print(f"Option 4: Importing media from {args.source} to {target_path}")
     
     # Setup logging with automatic log file
     log_file = None

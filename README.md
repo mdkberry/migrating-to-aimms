@@ -6,7 +6,7 @@
 
 - additional migration modes:
    - Restore from .aimms backup file
-   - Import non-AIMMS media files to new AIMMS project
+   - Import non-AIMMS media files to new AIMMS project (Option 4 - **NOW AVAILABLE**)
 
 - GUI based web interface
 
@@ -89,10 +89,35 @@ The AIMMS Migration Tool addresses the challenge of migrating projects from olde
 
 ### Migration Modes
 
-1. **Option 1**: Migrate from old project to new schema
+1. **Option 1**: Migrate from old project to new schema *(see [Option 1 Guide](guides/OPTION1_GUIDE.md))*
 2. **Option 2**: Create new project from CSV file (do this inside AIMMS 1.0 application)
 3. **Option 3**: Restore from .aimms backup file (planned)
-4. **Option 4**: Import non-AIMMS media files to new AIMMS project *(in progress)*
+4. **Option 4**: Import non-AIMMS media files to new AIMMS project **(NOW AVAILABLE)** *(see [Option 4 Guide](guides/OPTION4_GUIDE.md))*
+
+### Option 4: Import Non-AIMMS Media Files
+
+Option 4 allows you to import media files from non-AIMMS sources into a valid AIMMS version 1.0 project. This is perfect when you have organized media files and want to create a new AIMMS project.
+
+**Requirements**:
+- Source directory with CSV file and media folders
+- `image_storyboard/` folder with PNG files organized by shot_name
+- `video_storyboard/` folder with matching video+PNG pairs organized by shot_name
+- CSV file with `order_number` and `shot_name` columns
+
+**Usage**:
+```bash
+python main.py --mode option4 --source aimms_import --project-name YourProjectName --verbose
+```
+
+**Features**:
+- ✅ Comprehensive validation (ERROR/WARNING/INFO logging)
+- ✅ Automatic project structure creation
+- ✅ Database schema generation from current AIMMS schema
+- ✅ Media file organization and renaming
+- ✅ Shot mapping and takes table population
+- ✅ Detailed migration.log generation
+
+For detailed documentation, see [OPTION4_GUIDE.md](OPTION4_GUIDE.md).
 
 ### Basic Migration
 
@@ -108,6 +133,9 @@ python main.py --mode option1 --source old_project --project-name YourProjectNam
 
 # Verbose output
 python main.py --mode option1 --source old_project --project-name YourProjectName --verbose
+
+# Option 4: Import non-AIMMS media files to new AIMMS project
+python main.py --mode option4 --source aimms_import --project-name project_Footprints_25 --verbose
 ```
 
 ### Project Name vs Target Directory
@@ -131,6 +159,33 @@ The migration tool supports two ways to specify the output location:
 | `--restore` | Restore file path (for option3) | For option3 |
 | `--backup` | Create backup before migration | No |
 | `--verbose` | Enable verbose logging | No |
+
+### Option 4 Usage
+
+**Import non-AIMMS media files to new AIMMS project:**
+
+```bash
+# Basic usage
+python main.py --mode option4 --source aimms_import --project-name YourProjectName
+
+# With verbose output
+python main.py --mode option4 --source aimms_import --project-name YourProjectName --verbose
+```
+
+**Requirements:**
+- CSV file in `aimms_import` folder (e.g., `project_Footprints_25.csv`)
+- `image_storyboard/` and `video_storyboard/` directories with shot folders
+- Required CSV columns: `order_number`, `shot_name`
+
+**Features:**
+- ✅ Validates CSV structure and required columns
+- ✅ Validates media integrity (matching video/PNG pairs, orphaned files)
+- ✅ Creates complete AIMMS 1.0 project structure
+- ✅ Generates comprehensive migration.log with ERROR/WARNING/INFO messages
+- ✅ Uses UUID take_id generation (matching Option 1)
+- ✅ Enhanced validation for shot_name entries
+
+For detailed information, see the [Option 4 Guide](guides/OPTION4_GUIDE.md).
 | `--help` | Show help message | No |
 
 

@@ -21,6 +21,7 @@ from logger import (
     create_migration_logger
 )
 from models import MigrationResult, ValidationResult, MediaResult
+from import_non_aimms_media import Option4Migrator
 
 logger = create_migration_logger('engine')
 
@@ -58,6 +59,10 @@ class MigrationEngine:
         try:
             log_migration_start(self.config)
             self.logger.info(f"Migration mode: {self.config.get_migration_mode_description()}")
+            
+            # Handle Option 4 separately
+            if self.config.mode == 'option4':
+                return self._run_option4_migration()
             
             # Phase 1: Preparation
             if not self._prepare_migration():
@@ -736,6 +741,62 @@ class MigrationEngine:
     def _get_timestamp(self) -> str:
         """Get current timestamp for backup naming."""
         return datetime.now().strftime('%Y%m%d_%H%M%S')
+    
+    def _run_option4_migration(self) -> bool:
+        """Run Option 4 migration (import non-AIMMS media files)."""
+        try:
+            self.logger.info("Starting Option 4: Import non-AIMMS media files")
+            
+            # Initialize Option 4 migrator
+            option4_migrator = Option4Migrator(
+                source_path=self.config.source_path,
+                target_path=self.config.target_path
+            )
+            
+            # Execute migration
+            success = option4_migrator.migrate()
+            
+            # Store results
+            self.shot_mapping = option4_migrator.shot_mapping
+            self.migration_stats['errors'].extend(option4_migrator.errors)
+            self.migration_stats['warnings'].extend(option4_migrator.warnings)
+            
+            if success:
+                self.logger.info("Option 4 migration completed successfully!")
+                
+                # Generate reports for Option 4
+                self._generate_option4_reports(option4_migrator)
+                
+                return True
+            else:
+                self.logger.error("Option 4 migration failed!")
+                return False
+                
+        except Exception as e:
+            error_msg = f"Option 4 migration failed with error: {e}"
+            self.logger.error(error_msg)
+            self.migration_stats['errors'].append(error_msg)
+            return False
+    
+    def _generate_option4_reports(self, option4_migrator):
+        """Generate reports for Option 4 migration."""
+        try:
+            # Create report directory
+            os.makedirs(self.config.report_path, exist_ok=True)
+            
+            # Generate basic reports
+            report_generator = ReportGenerator(
+                target_path=self.config.target_path,
+                shot_mapping=self.shot_mapping,
+                migration_stats=self.migration_stats
+            )
+            
+            report_generator.generate_reports()
+            
+            self.logger.info("Option 4 reports generated successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to generate Option 4 reports: {e}")
     
     def get_migration_stats(self) -> Dict:
         """Get comprehensive migration statistics."""
