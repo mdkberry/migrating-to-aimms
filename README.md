@@ -6,7 +6,6 @@
 
 - additional migration modes:
    - Restore from .aimms backup file
-   - Import non-AIMMS media files to new AIMMS project (Option 4 - **NOW AVAILABLE**)
 
 - GUI based web interface
 
@@ -32,27 +31,9 @@ A comprehensive Python-based tool for migrating AIMMS projects from older format
 
 ## Overview
 
-The AIMMS Migration Tool addresses the challenge of migrating projects from older AIMMS formats to the new AIMMS 1.0 schema. The tool provides:
+The AIMMS Migration Tool addresses the challenge of migrating projects from older AIMMS formats to the new AIMMS 1.0 schema.
 
-- **Database Schema Migration**: Converts from `shot_name` primary key to `shot_id` AUTOINCREMENT
-- **Media File Reorganization**: Moves from `media/{shot_name}` to `media/{shot_id}` structure
-- **Data Integrity Validation**: Ensures consistency between database and media files
-- **Comprehensive Reporting**: Generates user-friendly and developer reports
-- **Error Recovery**: Provides detailed error information and recovery suggestions
-
-## Features
-
-### Core Features
-- ✅ **Multiple Migration Modes**: Support for different migration scenarios
-- ✅ **Schema Transformation**: Automatic database schema conversion
-- ✅ **Media Migration**: Intelligent file organization and validation
-- ✅ **Progress Tracking**: Real-time migration progress updates
-- ✅ **Comprehensive Logging**: Detailed logging for troubleshooting
-- ✅ **Validation Engine**: Multi-level validation and consistency checks
-- ✅ **Report Generation**: User-friendly and technical reports
-
-
-## Installation
+## Installation Of Migration Tool
 
 ### Prerequisites
 - Python 3.12 or higher (may work on earlier versions)
@@ -71,8 +52,6 @@ The AIMMS Migration Tool addresses the challenge of migrating projects from olde
    python -m venv venv
    # On Windows:
    venv\Scripts\activate
-   # On Linux/Mac:
-   source venv/bin/activate
    ```
 
 3. **Install dependencies (not needed currently)**:
@@ -92,34 +71,11 @@ The AIMMS Migration Tool addresses the challenge of migrating projects from olde
 1. **Option 1**: Migrate from old project to new schema *(see [Option 1 Guide](guides/OPTION1_GUIDE.md))*
 2. **Option 2**: Create new project from CSV file (do this inside AIMMS 1.0 application)
 3. **Option 3**: Restore from .aimms backup file (planned)
-4. **Option 4**: Import non-AIMMS media files to new AIMMS project **(NOW AVAILABLE)** *(see [Option 4 Guide](guides/OPTION4_GUIDE.md))*
+4. **Option 4**: Import non-AIMMS media files to new AIMMS project *(see [Option 4 Guide](guides/OPTION4_GUIDE.md))*
 
-### Option 4: Import Non-AIMMS Media Files
 
-Option 4 allows you to import media files from non-AIMMS sources into a valid AIMMS version 1.0 project. This is perfect when you have organized media files and want to create a new AIMMS project.
 
-**Requirements**:
-- Source directory with CSV file and media folders
-- `image_storyboard/` folder with PNG files organized by shot_name
-- `video_storyboard/` folder with matching video+PNG pairs organized by shot_name
-- CSV file with `order_number` and `shot_name` columns
-
-**Usage**:
-```bash
-python main.py --mode option4 --source aimms_import --project-name YourProjectName --verbose
-```
-
-**Features**:
-- ✅ Comprehensive validation (ERROR/WARNING/INFO logging)
-- ✅ Automatic project structure creation
-- ✅ Database schema generation from current AIMMS schema
-- ✅ Media file organization and renaming
-- ✅ Shot mapping and takes table population
-- ✅ Detailed migration.log generation
-
-For detailed documentation, see [OPTION4_GUIDE.md](OPTION4_GUIDE.md).
-
-### Basic Migration
+## OPTION 1: Migration Of Old Project To New Schema
 
 ```bash
 # Migrate from old project to new schema (will create folder "YourProjectName")
@@ -133,9 +89,6 @@ python main.py --mode option1 --source old_project --project-name YourProjectNam
 
 # Verbose output
 python main.py --mode option1 --source old_project --project-name YourProjectName --verbose
-
-# Option 4: Import non-AIMMS media files to new AIMMS project
-python main.py --mode option4 --source aimms_import --project-name project_Footprints_25 --verbose
 ```
 
 ### Project Name vs Target Directory
@@ -160,9 +113,21 @@ The migration tool supports two ways to specify the output location:
 | `--backup` | Create backup before migration | No |
 | `--verbose` | Enable verbose logging | No |
 
-### Option 4 Usage
+---
+
+## Option 4: Import Non-AIMMS Media Files
 
 **Import non-AIMMS media files to new AIMMS project:**
+
+Option 4 allows you to import media files from non-AIMMS sources into a valid AIMMS version 1.0 project. This is perfect when you have organized media files and want to create a new AIMMS project.
+
+**Requirements**:
+- Source directory with CSV file and media folders
+- `image_storyboard/` folder with PNG files organized by shot_name
+- `video_storyboard/` folder with matching video+PNG pairs organized by shot_name
+- CSV file with `order_number` and `shot_name` columns
+
+**Usage**:
 
 ```bash
 # Basic usage
@@ -174,26 +139,20 @@ python main.py --mode option4 --source aimms_import --project-name YourProjectNa
 
 **Requirements:**
 - CSV file in `aimms_import` folder (e.g., `project_Footprints_25.csv`)
-- `image_storyboard/` and `video_storyboard/` directories with shot folders
+- `image_storyboard/` and `video_storyboard/` directories with shot folders *(see Utility Scripts section for script to create shot_name folders from csv)*
 - Required CSV columns: `order_number`, `shot_name`
 
-**Features:**
-- ✅ Validates CSV structure and required columns
-- ✅ Validates media integrity (matching video/PNG pairs, orphaned files)
-- ✅ Creates complete AIMMS 1.0 project structure
-- ✅ Generates comprehensive migration.log with ERROR/WARNING/INFO messages
-- ✅ Uses UUID take_id generation (matching Option 1)
-- ✅ Enhanced validation for shot_name entries
 
-For detailed information, see the [Option 4 Guide](guides/OPTION4_GUIDE.md).
-| `--help` | Show help message | No |
+For detailed documentation, see [OPTION4_GUIDE.md](guides/OPTION4_GUIDE.md).
+
+---
 
 
 ## Utility Scripts
 
 ### Create Shot Subfolders
 
-A utility script for creating shot subfolders from a CSV file:
+A utility script for creating shot subfolders from a CSV file *(useful for Option 4 migration method migrating non-AIMMS media folders)*:
 
 ```bash
 python create-shot-subfolders.py csv-file-location target-folder
@@ -311,14 +270,20 @@ AIMMS_Migration_Tool/
 ├── 📄 LICENSE                 # 📄 License file
 ├── 📄 .gitignore              # 📝 Git ignore rules
 ├── 📁 old_project/            # 📂 Source project (example)
-│   └── put-you-old-project-in-here-delete-this-info-file
+│   └── put-your-inbound-old-project-here
 ├── 📁 transfer_folder/        # 📂 Migration workspace
 │   └── use-this-folder-as-migration-folder-or-name-your-own
+├── 📁 aimms_import/           # 📂 Non-AIMMS media import folder
+│   ├── image_storyboard/     # 📷 Image storyboard files
+│   └── video_storyboard/     # 🎥 Video storyboard files
 ├── 📁 schema/                 # 🗃️  Database schema definitions
 │   ├── aimms-shot-db-schema.json  # Database schema for version control
 │   └── aimms-meta-entries.json    # Meta table entries configuration
 ├── 📁 integrity_reports/      # 📊 Integrity test reports
-│   └── integrity-test-reports-saved-here
+│   └── integrity-reports-saved-here
+├── 📁 guides/                 # 📚 Migration guides
+│   ├── OPTION1_GUIDE.md       # Migration guide for Option 1
+│   └── OPTION4_GUIDE.md       # Migration guide for Option 4
 ├── 📄 main.py                 # 🚀 CLI entry point
 ├── 📄 migration_engine.py     # ⚙️  Migration orchestrator
 ├── 📄 config.py               # ⚙️  Configuration management
@@ -330,7 +295,9 @@ AIMMS_Migration_Tool/
 ├── 📄 reporting.py            # 📊 Report generation
 ├── 📄 logger.py               # 📝 Logging configuration
 ├── 📄 utils.py                # 🔧 Utility functions
-└── 📄 models.py               # 📋 Data models
+├── 📄 models.py               # 📋 Data models
+├── 📄 create-shot-subfolders.py  # 🛠️ Utility script for creating shot folders
+└── 📄 import_non_aimms_media.py  # 📁 Import non-AIMMS media files
 ```
 
 ### Schema Management
