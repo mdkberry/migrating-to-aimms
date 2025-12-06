@@ -80,7 +80,7 @@ Option 1 is designed to migrate existing AIMMS projects from older formats to th
 3. **Take Record Updates**
    - Updates `takes` table with new file paths
    - Generates UUID take_id values (format: `str(uuid.uuid4())`)
-   - Maintains take_type associations (`base_image`, `final_video`, `video_workflow`, `asset`)
+   - Maintains take_type associations (`base_image`, `final_video`, `video_workflow`)
 
 ### Phase 4: Validation
 
@@ -218,7 +218,6 @@ The migration tool supports two ways to specify the output location:
 ### Asset Files (in `media/characters/`, `media/locations/`, `media/other/`)
 
 - **Naming**: User-defined (no standard prefix required)
-- **Take Type**: `asset`
 - **Location**: Organized in subdirectories by category
 
 ## Error Handling
@@ -308,18 +307,12 @@ The migration tool supports two ways to specify the output location:
 ### Before Migration
 
 1. **Backup Source Project**
+
+   create a backup of the source project before beginning the migration.
+
    ```bash
    python main.py --mode option1 --source old_project --project-name YourProjectName --backup
    ```
-
-2. **Verify Source Integrity**
-   - Run integrity test on source project
-   - Check for missing or corrupted files
-   - Validate database consistency
-
-3. **Check Disk Space**
-   - Ensure sufficient space for new project
-   - Account for backup size if using `--backup`
 
 ### During Migration
 
@@ -333,6 +326,11 @@ The migration tool supports two ways to specify the output location:
    - Check log files for detailed information
    - Be prepared to interrupt if serious errors occur
 
+3. **Review Reports**
+   - Fix all ERROR messages.
+   - Delete migration folder.
+   - Run again until no ERROR messages remain.
+
 ### After Migration
 
 1. **Run Integrity Test**
@@ -345,10 +343,7 @@ The migration tool supports two ways to specify the output location:
    - Test core functionality
    - Verify media files display correctly
 
-3. **Review Reports**
-   - Check migration reports for issues
-   - Address any warnings or errors
-   - Document any manual fixes needed
+*Keep old backup copy on file in case issues are missed. This is a new method and application, and some things may not have been caught yet.*
 
 ## Troubleshooting
 
@@ -386,7 +381,7 @@ The migration tool supports two ways to specify the output location:
    - Verify source project integrity
 
 3. **Corruption Issues**
-   - Run integrity test on source
+   - Check integrity of source media
    - Check migration logs for errors
    - Consider manual recovery if needed
 
@@ -426,12 +421,8 @@ This structure can be loaded directly into AIMMS version 1.0 application.
 
 ## Notes
 
-- **File Paths**: All file paths in the migrated database use forward slashes (e.g., `media/1/video_01.mp4`)
-- **Relative Paths**: Only relative paths are stored in the database (no full file paths)
-- **Shot Mapping**: `shot_name` to `shot_id` mapping is maintained in `shot_name_mapping.json`
-- **Backup**: Use `--backup` flag to create backup before migration
+- **Backup**: Use `--backup` flag to create backup before migration or backup source material manually
 - **Schema**: Uses current AIMMS schema from `schema/aimms-shot-db-schema.json`
-- **UUID Take IDs**: Take records use UUID format for take_id (matches Option 4 implementation)
 
 ## Production Considerations
 
