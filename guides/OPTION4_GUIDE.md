@@ -16,28 +16,30 @@ Option 4 allows you to migrate media files from non-AIMMS sources (images, video
 2. **CSV File Requirements**:
    - Must contain `order_number` and `shot_name` columns (required)
    - Can include optional columns: `section`, `description`, `image_prompt`, `colour_scheme_image`, `time_of_day`, `location`, `country`, `year`, `video_prompt`, `created_date`
-   - The CSV filename will be used as the project name
+   - The CSV filename will be used as the project name (or specify it when using Option4 with the `--project-name` switch)
 
 3. **Media File Requirements**:
    - **Image Storyboard**: Each shot folder should contain PNG files (each PNG = one take)
    - **Video Storyboard**: Each shot folder should contain matching pairs of video files (MP4/MKV) and PNG files (each pair = one take)
-   - Shot folders in both storyboards should be named using `shot_name` from the CSV
+   - Shot folders in both storyboards should be named using `shot_name` from the CSV (there is a utility script `create-shot-subfolders.py` to do this for you using the csv `shot_name` column. Run it twice - once on each storyboard subfolder).
 
 ## Usage
 
 ### Command Line
 
 ```bash
-python main.py --mode option4 --source aimms_import --project-name project_Footprints_25 --verbose
+python main.py --mode option4 --source aimms_import --project-name YourProjectName --verbose
 ```
 
 **Parameters**:
 - `--mode option4`: Specifies Option 4 migration
 - `--source aimms_import`: Path to source directory containing media and CSV
-- `--project-name project_Footprints_25`: Name of the new AIMMS project (creates folder)
+- `--project-name YourProjectName`: Name of the new AIMMS project (creates folder)
 - `--verbose`: Enable verbose logging (optional)
 
 ### Example Directory Structure
+
+*(NOTE: both storyboard folders will usually have the same `shot_name` folders due to how AIMMS works with both storyboards in parallel. But this isnt strictly required, just best practice.)*
 
 ```
 aimms_import/
@@ -63,7 +65,7 @@ aimms_import/
 ### Phase 1: CSV Validation
 - Finds and validates the CSV file in the source directory
 - Checks for required columns: `order_number` and `shot_name`
-- Uses CSV filename as project name
+- Uses CSV filename as project name unless `--project-name` flag is used in call.
 
 ### Phase 2: Media Integrity Validation
 - Validates that `image_storyboard/` and `video_storyboard/` directories exist
@@ -74,7 +76,7 @@ aimms_import/
 - **ERROR**: If shot_name exists in CSV but no corresponding folder found in storyboard directories
 
 ### Phase 3: Project Structure Creation
-Creates the AIMMS project directory structure:
+Creates the AIMMS Version 1.0 project directory structure and schema:
 ```
 project_Footprints_25/
 ├── project_config.json
@@ -126,7 +128,7 @@ project_Footprints_25/
 
 ### Database Entries
 - **Shots**: `shot_id` (AUTOINCREMENT), `shot_name` (from CSV)
-- **Takes**: `take_id` format: **UUID (matches Option 1 format)**
+- **Takes**: `take_id` format: **UUID**
 
 ## Enhanced Validation Features
 
@@ -145,20 +147,6 @@ ERROR MESSAGES:
 This forces users to either:
 1. **Resolve the media**: Create missing storyboard folder and add appropriate media files, OR
 2. **Remove from CSV**: Delete the shot entry from the CSV file if not needed
-
-### UUID Take ID Generation
-
-**CRITICAL FIX**: Option 4 now uses UUID take_id generation matching Option 1:
-
-```python
-# OLD (incorrect):
-take_id = f"{shot_id}_{take_type}_{file_path.split('/')[-1]}"
-
-# NEW (correct - matching Option 1):
-take_id = generate_uuid()  # str(uuid.uuid4())
-```
-
-This ensures consistency with Option 1 and proper database schema compliance.
 
 ## Error Handling
 
@@ -212,25 +200,9 @@ Info: 1
 ❌ MIGRATION FAILED - Please fix the errors above and retry.
 ```
 
-## Key Features Summary
-
-✅ **Modular implementation** - Option 4 completely separate from Option 1
-✅ **ERROR/WARNING/INFO logging** - Comprehensive logging to migration.log
-✅ **CSV validation** - Required columns `order_number` and `shot_name`
-✅ **Media validation** - Image and video storyboard validation
-✅ **Enhanced validation** - **NEW**: Shot_name entries in CSV must have corresponding storyboard folders
-✅ **Project structure** - Complete AIMMS 1.0 project structure
-✅ **Database creation** - Using current schema from `schema/aimms-shot-db-schema.json`
-✅ **Media migration** - Proper file organization and naming
-✅ **Shot mapping** - `shot_name` to `shot_id` mapping
-✅ **Takes table** - Proper take type entries (`base_image`, `final_video`, `video_workflow`) with **UUID take_id**
-✅ **File paths** - Relative paths with forward slashes only
-✅ **Error handling** - Migration stops on ERROR, continues on WARNING
-✅ **Documentation** - Complete usage guide and examples
-
 ## Production Ready
 
-The implementation is **production-ready** and provides comprehensive validation to ensure data integrity. Users can now successfully import non-AIMMS media files into AIMMS projects using Option 4 with proper UUID take_id generation matching Option 1!
+The implementation is **production-ready** and provides comprehensive validation to ensure data integrity. Users can now successfully import non-AIMMS media files into AIMMS projects using Option 4.
 
 ## Troubleshooting
 
@@ -285,8 +257,4 @@ Once migration completes successfully:
 
 ## Notes
 
-- **File Paths**: All file paths in the database use forward slashes (e.g., `media/1/video_01.mp4`)
-- **Relative Paths**: Only relative paths are stored in the database (no full file paths)
-- **Shot Mapping**: `shot_name` to `shot_id` mapping is maintained in `shot_name_mapping.json`
-- **Backup**: No backup functionality for Option 4 (not applicable)
 - **Schema**: Uses current AIMMS schema from `schema/aimms-shot-db-schema.json`
