@@ -90,9 +90,9 @@ The AIMMS Migration Tool addresses the challenge of migrating projects from olde
 ### Migration Modes
 
 1. **Option 1**: Migrate from old project to new schema
-2. **Option 2**: Create new project from CSV file (can be done inside AIMMS 1.0 application)
+2. **Option 2**: Create new project from CSV file (do this inside AIMMS 1.0 application)
 3. **Option 3**: Restore from .aimms backup file (planned)
-4. **Option 4**: Import non-AIMMS media files to new AIMMS project (planned)
+4. **Option 4**: Import non-AIMMS media files to new AIMMS project *(in progress)*
 
 ### Basic Migration
 
