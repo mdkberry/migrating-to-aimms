@@ -142,6 +142,30 @@ python main.py --mode option4 --source aimms_import --project-name YourProjectNa
 - `image_storyboard/` and `video_storyboard/` directories with shot folders *(see Utility Scripts section for script to create shot_name folders from csv)*
 - Required CSV columns: `order_number`, `shot_name`
 
+**CSV Column Headings:**
+When creating CSV files for importing shots to AIMMS, ensure your CSV includes the following columns (some entries can be empty but all columns are required):
+
+| Column | Description | Required |
+|--------|-------------|----------|
+| `order_number` | Sequential numbering for shots | ✅ Yes |
+| `shot_name` | Unique identifier for each shot | ✅ Yes |
+| `section` | Section/category of the shot | ❌ No |
+| `description` | Detailed description of the shot | ❌ No |
+| `image_prompt` | Prompt used for generating base images | ❌ No |
+| `colour_scheme_image` | Color scheme specification (60:30:10 ratio) | ❌ No |
+| `time_of_day` | Time of day setting (dawn, day, dusk, night) | ❌ No |
+| `location` | Physical location of the shot | ❌ No |
+| `country` | Country where shot takes place | ❌ No |
+| `year` | Year setting for the shot | ❌ No |
+| `video_prompt` | Prompt used for generating video content | ❌ No |
+
+**Example CSV Structure:**
+```csv
+order_number,shot_name,section,description,image_prompt,colour_scheme_image,time_of_day,location,country,year,video_prompt
+1,HWM_00A_00A_full_mist,Prologue,The first frame showing full mist on lake just a hint of the island in it,Image prompt for base image for HWM_00A_00A_full_mist,Add a 60:30:10 ratio color scheme,default time of day,default location,default country,default year,Video prompt for HWM_00A_00A_full_mist
+2,HWM_00A_01A_lake_mist,Prologue,slow glide through impenetrable early dawn mist over a glassy lake as if on an unseen row boat (heard but not seen),,cold blue misty pre dawn light,dawn low light,woodland lake,England in summer,1600s,
+```
+
 
 For detailed documentation, see [OPTION4_GUIDE.md](guides/OPTION4_GUIDE.md).
 

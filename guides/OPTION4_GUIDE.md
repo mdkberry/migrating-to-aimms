@@ -15,7 +15,7 @@ Option 4 allows you to migrate media files from non-AIMMS sources (images, video
 
 2. **CSV File Requirements**:
    - Must contain `order_number` and `shot_name` columns (required)
-   - Can include optional columns: `section`, `description`, `image_prompt`, `colour_scheme_image`, `time_of_day`, `location`, `country`, `year`, `video_prompt`, `created_date`
+   - Can include optional entries for columns: `section`, `description`, `image_prompt`, `colour_scheme_image`, `time_of_day`, `location`, `country`, `year`, `video_prompt`, `created_date`
    - The CSV filename will be used as the project name (or specify it when using Option4 with the `--project-name` switch)
 
 3. **Media File Requirements**:
