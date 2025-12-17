@@ -1,15 +1,25 @@
 # Ignore contents of these folders but keep the folders themselves
-/current_project/
+#/current_project/
 #/old_project/
 #/transfer_folder/
 /project_*/
-/project_The_Highwayman/
 
-# Ignore everything inside aimms_import/image_storyboard
+# Ignore everything inside these folders
 aimms_import/image_storyboard/*
+aimms_import/video_storyboard/*
+old_project/*
+transfer_folder/*
+current_project/*
 
 # But keep a placeholder file
 !aimms_import/image_storyboard/.gitkeep
+!aimms_import/video_storyboard/.gitkeep
+!old_project/.gitkeep
+!old_project/Option1-put-your-inbound-old-project-here
+!transfer_folder/.gitkeep
+!transfer_folder/transfer_folder/use-this-folder-as-migration-folder-or-name-your-own
+!current_project/.gitkeep
+
 
 # Ignore dev folder entirely
 /dev/
