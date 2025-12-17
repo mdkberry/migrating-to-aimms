@@ -174,6 +174,29 @@ For detailed documentation, see [OPTION4_GUIDE.md](guides/OPTION4_GUIDE.md).
 
 ## Utility Scripts
 
+### Copy Over Media
+
+A utility script for copying and organizing media files from various sources into AIMMS-compatible shot folders. This script reads shot names from a CSV file and copies matching media files (images or videos) to organized shot-specific folders.
+
+**Features:**
+- Supports both image (.png) and video (.mp4/.mkv) file types
+- Automatically creates shot_name folders
+- Handles naming conflicts by adding counters
+- Generates detailed reports of all operations
+- Supports multiple CSV delimiters (comma, semicolon, tab, pipe)
+
+**Usage:**
+```bash
+python copy_over_media.py {target_location} {file_type} {csv_file} {source_folder}
+```
+
+**Example:**
+```bash
+python copy_over_media.py "Z:\Media_Productions\Davinci\Sirena_25\migrate_to_AIMMS\image_storyboard" image "Z:\Media_Productions\Davinci\Sirena_25\migrate_to_AIMMS\project_Sirena_25.csv" "Z:\Media_Productions\Davinci\Sirena_25\Raw_footage"
+```
+
+For detailed instructions and examples, see the [Copy Over Media Guide](guides/copy_over_media.md).
+
 ### Create Shot Subfolders
 
 A utility script for creating shot subfolders from a CSV file *(useful for Option 4 migration method migrating non-AIMMS media folders)*:
