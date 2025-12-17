@@ -1,8 +1,10 @@
 {
   "metadata": {
-    "extracted_at": "2025-12-05T08:54:08.435254",
+    "extracted_at": "2025-12-17T06:14:09.766Z",
     "database_path": "current_project/data/shots.db",
-    "sqlite_version": "3.51.0"
+    "sqlite_version": "3.51.0",
+    "schema_version": "1.4",
+    "migration": "Project Settings Migration - ComfyUI Configuration and Project Information"
   },
   "tables": {
     "assets": "CREATE TABLE assets (\n                id_key TEXT PRIMARY KEY,\n                asset_name TEXT,\n                asset_type TEXT,\n                file_path TEXT,\n                starred INTEGER DEFAULT 0,\n                created_date TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now', 'utc'))\n            )",
