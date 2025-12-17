@@ -7,14 +7,17 @@
 # Ignore everything inside these folders
 aimms_import/image_storyboard/*
 aimms_import/video_storyboard/*
+aimms_import/*.csv
 old_project/*
 transfer_folder/*
 current_project/*
 integrity_reports/*
 
+
 # But keep a placeholder file
 !aimms_import/image_storyboard/.gitkeep
 !aimms_import/video_storyboard/.gitkeep
+!aimms_import\Option4-non-AIMMS-migration-media-goes-in-here
 !old_project/.gitkeep
 !old_project/Option1-put-your-inbound-old-project-here
 !transfer_folder/.gitkeep
