@@ -197,6 +197,17 @@ python copy_over_media.py "Z:\Media_Productions\Davinci\Sirena_25\migrate_to_AIM
 
 For detailed instructions and examples, see the [Copy Over Media Guide](guides/copy_over_media.md).
 
+### Create Missing Thumbnails
+
+A utility script to scan folders for video files (mp4/mkv) and generate missing png thumbnails. This is useful for ensuring all video files have corresponding thumbnail images.
+
+Usage:
+```bash
+python create_missing_thumbnails.py [target_folder]
+```
+
+See [guides/create_missing_thumbnails.md](guides/create_missing_thumbnails.md) for detailed documentation.
+
 ### Create Shot Subfolders
 
 A utility script for creating shot subfolders from a CSV file *(useful for Option 4 migration method migrating non-AIMMS media folders)*:

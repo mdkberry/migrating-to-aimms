@@ -18,14 +18,21 @@ Option 4 allows you to migrate media files from non-AIMMS sources (images, video
    - Must include columns (can be empty): `section`, `description`, `image_prompt`, `colour_scheme_image`, `time_of_day`, `location`, `country`, `year`, `video_prompt`
    - Optional column:`created_date`
    - The CSV filename will be used as the project name (or specify it when using Option4 with the `--project-name` switch). 
-   - We recommend prefixing your AIMMS projects with `project_` for consistency, but this is option.
+   - We recommend prefixing your AIMMS projects with `project_` for consistency, but this is optional.
 
 3. **Media File Requirements**:
    - **Image Storyboard**: Each shot folder should match the shot_name in csv and contain PNG files (each PNG = one take)
-   - **Video Storyboard**: Each shot folder should match the shot_name in csv and should contain matching pairs of video files (MP4/MKV) and PNG files (each pair = one take)      
-   - Shot folders in both storyboards must be named using `shot_name` from the CSV (there is a standalone utility script `create-shot-subfolders.py` or if you have to collect a lot of files together, check `guides\copy_over_media.md` for a solution). 
+   - **Video Storyboard**: Each shot folder should match the shot_name in csv and should contain matching pairs of video files (MP4/MKV) and PNG files (each pair = one take). If the video is missing a matching png file it will not be imported (see below for more info).
+
+   **Creating Shot Folders**:      
+   - Shot folders in both storyboards must be named using `shot_name` from the CSV (there is a standalone utility script `create-shot-subfolders.py` or if you have to collect a lot of files together, check [Copy Over Media Guide](guides/copy_over_media.md) for a more inclusive solution). 
    - After collecting all the image and video storyboard shots (and takes) you need, transfer them to the relevant folders in the `aimms_import` directory.
    - **NOTE**: do not create more subfolders under `shot_name` folders in either storyboard, or those folder contents will be ignored. Only media in the `shot_name` folder directly will be considered a take.
+
+   **Creating Missing Thumbnails**:
+   - If some videos are missing thumbnails they will need them created to be imported. See [guides/create_missing_thumbnails.md](guides/create_missing_thumbnails.md) for detailed documentation.
+
+
 
 ## Usage
 
