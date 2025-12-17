@@ -4,7 +4,12 @@
 #/transfer_folder/
 /project_*/
 /project_The_Highwayman/
-#/aimms_import/
+
+# Ignore everything inside aimms_import/image_storyboard
+aimms_import/image_storyboard/*
+
+# But keep a placeholder file
+!aimms_import/image_storyboard/.gitkeep
 
 # Ignore dev folder entirely
 /dev/

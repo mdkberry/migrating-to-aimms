@@ -125,7 +125,7 @@ Option 4 allows you to import media files from non-AIMMS sources into a valid AI
 - Source directory with CSV file and media folders
 - `image_storyboard/` folder with PNG files organized by shot_name
 - `video_storyboard/` folder with matching video+PNG pairs organized by shot_name
-- CSV file with `order_number` and `shot_name` columns
+- CSV file with `order_number` and `shot_name` columns filled (all other columns must be present but content is optional)
 
 **Usage**:
 
