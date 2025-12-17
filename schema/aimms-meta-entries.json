@@ -47,13 +47,13 @@
       "create_if_missing": true
     },
     "comfyui_output_path": {
-      "value": "M:/ComfyUI/ComfyUI_windows_portable/ComfyUI/output",
+      "value": "",
       "description": "ComfyUI output directory path",
       "required": false,
       "create_if_missing": true
     },
     "comfyui_URL": {
-      "value": "http://127.0.0.1:8188/",
+      "value": "",
       "description": "ComfyUI server URL",
       "required": false,
       "create_if_missing": true
