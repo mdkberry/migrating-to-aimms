@@ -10,6 +10,7 @@ aimms_import/video_storyboard/*
 old_project/*
 transfer_folder/*
 current_project/*
+integrity_reports/*
 
 # But keep a placeholder file
 !aimms_import/image_storyboard/.gitkeep
@@ -19,6 +20,7 @@ current_project/*
 !transfer_folder/.gitkeep
 !transfer_folder/transfer_folder/use-this-folder-as-migration-folder-or-name-your-own
 !current_project/.gitkeep
+!integrity_reports/.gitkeep
 
 
 # Ignore dev folder entirely
