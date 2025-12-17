@@ -91,10 +91,9 @@ Creates the AIMMS Version 1.0 project directory structure and schema:
 ```
 project_Footprints_25/
 ├── project_config.json
-├── shot_name_mapping.json (root)
 ├── data/
 │   ├── shots.db
-│   ├── shot_name_mapping.json (data folder)
+│   ├── shot_name_mapping.json
 │   ├── csv/
 │   ├── backup/
 │   └── saves/

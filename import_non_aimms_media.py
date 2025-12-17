@@ -284,11 +284,8 @@ class Option4Migrator:
             # Create project_config.json
             self._create_project_config()
             
-            # Create shot_name_mapping.json (root level)
-            self._create_shot_name_mapping(root_level=True)
-            
             # Create shot_name_mapping.json (data folder)
-            self._create_shot_name_mapping(root_level=False)
+            self._create_shot_name_mapping()
             
             # Create empty project_log.log
             project_log = logs_dir / "project_log.log"
@@ -323,8 +320,8 @@ class Option4Migrator:
             self.errors.append(error_msg)
             raise
     
-    def _create_shot_name_mapping(self, root_level: bool = True):
-        """Create shot_name_mapping.json file."""
+    def _create_shot_name_mapping(self):
+        """Create shot_name_mapping.json file in data folder."""
         try:
             mapping_data = {
                 "version": "1.0",
@@ -332,15 +329,12 @@ class Option4Migrator:
                 "mapping": {}
             }
             
-            if root_level:
-                mapping_file = self.target_path / "shot_name_mapping.json"
-            else:
-                mapping_file = self.target_path / "data" / "shot_name_mapping.json"
+            mapping_file = self.target_path / "data" / "shot_name_mapping.json"
             
             with open(mapping_file, 'w') as f:
                 json.dump(mapping_data, f, indent=2)
             
-            logger.info(f"Created shot_name_mapping.json ({'root' if root_level else 'data folder'})")
+            logger.info("Created shot_name_mapping.json in data folder")
             
         except Exception as e:
             error_msg = f"Failed to create shot_name_mapping.json: {e}"

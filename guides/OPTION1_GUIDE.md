@@ -20,10 +20,9 @@ Option 1 is designed to migrate existing AIMMS projects from older formats to th
      ```
      YourProjectName/
      ├── project_config.json
-     ├── shot_name_mapping.json (root)
      ├── data/
      │   ├── shots.db
-     │   ├── shot_name_mapping.json (data folder)
+     │   ├── shot_name_mapping.json
      │   ├── csv/
      │   ├── backup/
      │   └── saves/
@@ -36,8 +35,8 @@ Option 1 is designed to migrate existing AIMMS projects from older formats to th
          ├── project_log.log
          └── migration_reports/
      ```
-   - Copies existing `project_config.json` (preserves `project_start_date`)
-   - Creates `shot_name_mapping.json` files
+    - Copies existing `project_config.json` (preserves `project_start_date`)
+    - Creates `shot_name_mapping.json` file in data folder
 
 3. **Backup Creation** (if `--backup` flag used)
    - Creates timestamped backup of source project
@@ -59,7 +58,7 @@ Option 1 is designed to migrate existing AIMMS projects from older formats to th
 
 3. **Shot Mapping Generation**
    - Creates mapping between old `shot_name` and new `shot_id`
-   - Stored in `shot_name_mapping.json` files (root and data folder)
+   - Stored in `shot_name_mapping.json` file (data folder)
    - Used for media file reorganization
 
 ### Phase 3: Media Migration
@@ -175,7 +174,7 @@ The migration tool supports two ways to specify the output location:
 - **Primary Key**: `shot_id` (INTEGER AUTOINCREMENT)
 - **Media Path**: `media/{shot_id}/`
 - **Take References**: By shot_id
-- **Mapping**: `shot_name_mapping.json` maintains relationship
+- **Mapping**: `shot_name_mapping.json` (data folder) maintains relationship
 
 ### Schema Components
 
@@ -392,10 +391,9 @@ Once migration is complete, the resulting project structure is fully compatible 
 ```
 YourProjectName/
 ├── project_config.json              # Project configuration
-├── shot_name_mapping.json           # Shot name to ID mapping
 ├── data/
 │   ├── shots.db                     # SQLite database
-│   ├── shot_name_mapping.json       # Database shot mapping
+│   ├── shot_name_mapping.json       # Shot name to ID mapping
 │   ├── csv/                         # CSV import/export
 │   ├── backup/                      # Database backups
 │   └── saves/                       # Saved states

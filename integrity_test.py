@@ -198,7 +198,6 @@ class IntegrityTester:
             # Check required files
             required_files = [
                 self.project_path / "project_config.json",
-                self.project_path / "shot_name_mapping.json",
                 self.data_path / "shots.db",
                 self.data_path / "shot_name_mapping.json"
             ]

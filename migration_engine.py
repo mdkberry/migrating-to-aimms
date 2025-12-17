@@ -634,14 +634,11 @@ class MigrationEngine:
             # Create project_config.json
             self._create_project_config()
             
-            # Create shot_name_mapping.json in root
-            self._create_shot_name_mapping(root_level=True)
-            
             # Create data subfolders
             self._create_data_subfolders()
             
             # Create shot_name_mapping.json in data folder
-            self._create_shot_name_mapping(root_level=False)
+            self._create_shot_name_mapping()
             
             # Create logs folder and files
             self._create_logs_structure()
@@ -696,12 +693,9 @@ class MigrationEngine:
         
         self.logger.info(f"Created project_config.json at {project_config_path}")
     
-    def _create_shot_name_mapping(self, root_level: bool = True):
-        """Create shot_name_mapping.json file."""
-        if root_level:
-            mapping_path = os.path.join(self.config.target_path, 'shot_name_mapping.json')
-        else:
-            mapping_path = os.path.join(self.config.data_path, 'shot_name_mapping.json')
+    def _create_shot_name_mapping(self):
+        """Create shot_name_mapping.json file in data folder."""
+        mapping_path = os.path.join(self.config.data_path, 'shot_name_mapping.json')
         
         mapping_data = {
             "version": "1.0",
@@ -712,8 +706,7 @@ class MigrationEngine:
         with open(mapping_path, 'w') as f:
             json.dump(mapping_data, f, indent=2)
         
-        location = "root" if root_level else "data folder"
-        self.logger.info(f"Created shot_name_mapping.json in {location}: {mapping_path}")
+        self.logger.info(f"Created shot_name_mapping.json in data folder: {mapping_path}")
     
     def _create_data_subfolders(self):
         """Create csv, backup, and saved subfolders in data directory."""

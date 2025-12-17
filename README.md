@@ -255,10 +255,9 @@ The migration tool creates a valid AIMMS version 1.0 project structure:
 ```
 YourProjectName/
 ├── 📄 project_config.json              # Project configuration
-├── 📄 shot_name_mapping.json           # Shot name to ID mapping (root level)
 ├── 📁 data/                            # Database and data files
 │   ├── 📄 shots.db                     # SQLite database
-│   ├── 📄 shot_name_mapping.json       # Shot name to ID mapping (data folder)
+│   ├── 📄 shot_name_mapping.json       # Shot name to ID mapping
 │   ├── 📁 csv/                         # CSV import/export files
 │   ├── 📁 backup/                      # Database backup files
 │   └── 📁 saves/                       # Saved .aimms recovery files
@@ -305,9 +304,7 @@ Tracks the relationship mapping between shot names and shot IDs:
 }
 ```
 
-Two copies are created:
-- **Root level**: For project-level reference
-- **Data folder**: For database-related operations
+Created in the data folder for database-related operations.
 
 ### Data Subfolders (used by AIMMS version 1.0 Storyboard Management software)
 - **csv/**: For CSV import/export operations
