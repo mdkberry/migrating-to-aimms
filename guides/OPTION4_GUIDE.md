@@ -9,19 +9,23 @@ Option 4 allows you to migrate media files from non-AIMMS sources (images, video
 ## Prerequisites
 
 1. **Source Directory Structure**: Your source directory (e.g., `aimms_import`) must contain:
-   - A CSV file (e.g., `project_Footprints_25.csv`)
+   - A valid CSV file (e.g., `project_Footprints_25.csv`)
    - An `image_storyboard/` folder
    - A `video_storyboard/` folder
 
 2. **CSV File Requirements**:
-   - Must contain `order_number` and `shot_name` columns (required)
-   - Can include optional entries for columns: `section`, `description`, `image_prompt`, `colour_scheme_image`, `time_of_day`, `location`, `country`, `year`, `video_prompt`, `created_date`
-   - The CSV filename will be used as the project name (or specify it when using Option4 with the `--project-name` switch)
+   - Must contain `order_number` and `shot_name` columns (entries required)
+   - Must include columns (can be empty): `section`, `description`, `image_prompt`, `colour_scheme_image`, `time_of_day`, `location`, `country`, `year`, `video_prompt`
+   - Optional column:`created_date`
+   - The CSV filename will be used as the project name (or specify it when using Option4 with the `--project-name` switch). 
+   - We recommend prefixing your AIMMS projects with `project_` for consistency, but this is option.
 
 3. **Media File Requirements**:
-   - **Image Storyboard**: Each shot folder should contain PNG files (each PNG = one take)
-   - **Video Storyboard**: Each shot folder should contain matching pairs of video files (MP4/MKV) and PNG files (each pair = one take)
-   - Shot folders in both storyboards should be named using `shot_name` from the CSV (there is a utility script `create-shot-subfolders.py` to do this for you using the csv `shot_name` column. Run it twice - once on each storyboard subfolder).
+   - **Image Storyboard**: Each shot folder should match the shot_name in csv and contain PNG files (each PNG = one take)
+   - **Video Storyboard**: Each shot folder should match the shot_name in csv and should contain matching pairs of video files (MP4/MKV) and PNG files (each pair = one take)      
+   - Shot folders in both storyboards must be named using `shot_name` from the CSV (there is a standalone utility script `create-shot-subfolders.py` or if you have to collect a lot of files together, check `guides\copy_over_media.md` for a solution). 
+   - After collecting all the image and video storyboard shots (and takes) you need, transfer them to the relevant folders in the `aimms_import` directory.
+   - **NOTE**: do not create more subfolders under `shot_name` folders in either storyboard, or those folder contents will be ignored. Only media in the `shot_name` folder directly will be considered a take.
 
 ## Usage
 
